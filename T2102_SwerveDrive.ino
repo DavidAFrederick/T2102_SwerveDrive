@@ -32,6 +32,10 @@ Servo heading_motor_speed_PWM;
 volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
 int lastEncoded = 0;          // Used to track last encoder state
 
+int temp_motor_speed = 0;
+int temp_motor_speed_increment = +1;
+
+
 //=============================================================================
 
 void setup() {
@@ -49,8 +53,23 @@ void loop() {
   heading = calculateHeading(sensorValueA0, sensorValueA1);
   displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, heading);
 
-  steering_motor_speed_PWM.write(90);
-  heading_motor_speed_PWM.write(90);
+
+
+  temp_motor_speed = temp_motor_speed + temp_motor_speed_increment;
+  steering_motor_speed_PWM.write(temp_motor_speed);
+  Serial.print ("Speed: ");
+  Serial.println (temp_motor_speed);
+  if (temp_motor_speed >= 180){
+    temp_motor_speed_increment = -1;
+  }
+  if (temp_motor_speed <= 2){
+    temp_motor_speed_increment = 1;
+  }
+  delay(250);
+
+  
+//  steering_motor_speed_PWM.write(0);
+//  heading_motor_speed_PWM.write(0);
 
   static int lastReportedPos = 0;  // Keep track of last reported position
   if (encoderPos != lastReportedPos) {
@@ -83,7 +102,7 @@ void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float h
   String sensorValuesString = "";
   String headingString = "";
 
-  headingString = "Heading: " + String(heading);
+  headingString = "Heading:    " + String(heading);
   display.setCursor(0, 0);       // Set cursor position
   display.print(headingString);  // Print text
 
