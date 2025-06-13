@@ -23,11 +23,14 @@ const int heading_motor_direction_A_pin = 8;
 const int heading_motor_direction_B_pin = 9;
 const int heading_motor_speed_PWM_pin = 10;
 
+const int heading_motor_encoder_A_pin = 11;
+const int heading_motor_encoder_B_pin = 12;
 
 Servo steering_motor_speed_PWM;
 Servo heading_motor_speed_PWM;
 
-
+volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
+int lastEncoded = 0;          // Used to track last encoder state
 
 //=============================================================================
 
@@ -49,6 +52,12 @@ void loop() {
   steering_motor_speed_PWM.write(90);
   heading_motor_speed_PWM.write(90);
 
+  static int lastReportedPos = 0;  // Keep track of last reported position
+  if (encoderPos != lastReportedPos) {
+    Serial.print("Position: ");
+    Serial.println(encoderPos);
+    lastReportedPos = encoderPos;
+  }
 }
 //========================================================================
 
@@ -124,17 +133,36 @@ void configure_pins() {
   pinMode(heading_motor_speed_PWM_pin, OUTPUT);
 
   digitalWrite(steering_motor_direction_A_pin, HIGH);
-  digitalWrite(steering_motor_direction_B_pin, HIGH);
+  digitalWrite(steering_motor_direction_B_pin, LOW);
   digitalWrite(heading_motor_direction_A_pin, HIGH);
-  digitalWrite(heading_motor_direction_B_pin, HIGH);
+  digitalWrite(heading_motor_direction_B_pin, LOW);
 
 
   steering_motor_speed_PWM.attach(steering_motor_speed_PWM_pin);
   heading_motor_speed_PWM.attach(heading_motor_speed_PWM_pin);
+
+
+  pinMode(heading_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
+  pinMode(heading_motor_encoder_B_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
+  attachInterrupt(digitalPinToInterrupt(heading_motor_encoder_A_pin), updateEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(heading_motor_encoder_B_pin), updateEncoder, CHANGE);
 }
 
 //------------------------------------------------------------------------
+void updateEncoder() {
+  int MSB = digitalRead(heading_motor_encoder_A_pin);
+  int LSB = digitalRead(heading_motor_encoder_B_pin);
+  int encoded = (MSB << 1) | LSB;
+  int sum = (lastEncoded << 2) | encoded;
 
+  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) {
+    encoderPos++;
+  }
+  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) {
+    encoderPos--;
+  }
+  lastEncoded = encoded;
+}
 
 //------------------------------------------------------------------------
 
