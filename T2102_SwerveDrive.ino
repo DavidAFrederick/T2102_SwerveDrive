@@ -1,4 +1,3 @@
-////  #include <Servo.h>
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
 #define OLED_ADDR 0x3C  // Replace with your OLED's I2C address
@@ -16,18 +15,44 @@ float sensorValueA0Component = 0;
 float sensorValueA1Component = 0;
 float heading = 0;
 
-const int steering_motor_speed_PWM_pin = 5;
-const int steering_motor_direction_A_pin = 6;
-const int steering_motor_direction_B_pin = 7;
-const int heading_motor_direction_A_pin = 8;
-const int heading_motor_direction_B_pin = 9;
-const int wheel_rotation_motor_speed_PWM_pin = 10;
+// Arduino Pin Assignments
+// D13   - Not Used
+// 3.3v  - Not Used
+// Ref   - Not Used
 
-const int heading_motor_encoder_A_pin = 11;
-const int heading_motor_encoder_B_pin = 12;
+//  A0 - [D14] - A0 - Wheel heading Sensor - Base
+//  A1 - [D15] - A1 -  Wheel heading Sensor - Inverted
+const int control_potentiometer_ground_pin = 16 // D16 [A2]
+const int control_potentiometer_5V_pin = 17  // D17 [A3]
+//  A4 - [D18] - SDA - OLED Display
+//  A5 - [D19] - SDC - OLED Display
+//  A6 
+//  A7 - Control Potentiometer - Analog signal
 
-//Servo steering_motor_speed_PWM;
-//Servo heading_motor_speed_PWM;
+//  5v - Used
+//  Reset - Not used
+//  Ground - Used
+//  Vin - Not Used
+
+// - - - - -
+// D1 - Not usable
+// D0 - Not usable
+// Reset - Not used
+// Ground
+
+// Digital:
+const int heading_motor_encoder_A_pin = 2;  // Must be pins 2 and 3
+const int heading_motor_encoder_B_pin = 3;  // Must be pins 2 and 3
+
+//   D4
+const int steering_motor_speed_PWM_pin = 5;     // D5
+const int steering_motor_direction_A_pin = 6;   // D6
+const int steering_motor_direction_B_pin = 7;   // D7
+const int heading_motor_direction_A_pin = 8;    // D8
+const int heading_motor_direction_B_pin = 9;    // D9
+const int wheel_rotation_motor_speed_PWM_pin = 10;  // D10 
+// D11
+// D12
 
 volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
 int lastEncoded = 0;          // Used to track last encoder state
@@ -52,8 +77,6 @@ void loop() {
   sensorValueA1 = returnSensor(A1);
   heading = calculateHeading(sensorValueA0, sensorValueA1);
   displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, heading);
-
-
 
   temp_motor_speed = temp_motor_speed + temp_motor_speed_increment;
   analogWrite(wheel_rotation_motor_speed_PWM_pin, temp_motor_speed);
@@ -157,17 +180,20 @@ void configure_pins() {
   digitalWrite(heading_motor_direction_A_pin, HIGH);
   digitalWrite(heading_motor_direction_B_pin, LOW);
 
-
-//  steering_motor_speed_PWM.attach(steering_motor_speed_PWM_pin);
-//  heading_motor_speed_PWM.attach(wheel_rotation_motor_speed_PWM_pin);
   pinMode(steering_motor_speed_PWM_pin, OUTPUT);
   pinMode(wheel_rotation_motor_speed_PWM_pin, OUTPUT);
-
 
   pinMode(heading_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
   pinMode(heading_motor_encoder_B_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
   attachInterrupt(digitalPinToInterrupt(heading_motor_encoder_A_pin), updateEncoder, CHANGE);
   attachInterrupt(digitalPinToInterrupt(heading_motor_encoder_B_pin), updateEncoder, CHANGE);
+
+  pinMode(control_potentiometer_ground_pin, OUTPUT);
+  pinMode(control_potentiometer_5V_pin, OUTPUT);
+  digitalWrite(control_potentiometer_ground_pin, LOW);
+  digitalWrite(control_potentiometer_5V_pin, HIGH);
+
+
 }
 
 //------------------------------------------------------------------------
