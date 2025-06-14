@@ -14,6 +14,7 @@ float lineIntercept = 169;
 float sensorValueA0Component = 0;
 float sensorValueA1Component = 0;
 float heading = 0;
+int analogControl = 0;
 
 // Arduino Pin Assignments
 // D13   - Not Used
@@ -34,15 +35,15 @@ const int control_potentiometer_5V_pin = 17  // D17 [A3]
 //  Ground - Used
 //  Vin - Not Used
 
-// - - - - -
+// - - - - - - - - - - - - 
+
 // D1 - Not usable
 // D0 - Not usable
 // Reset - Not used
 // Ground
 
-// Digital:
-const int heading_motor_encoder_A_pin = 2;  // Must be pins 2 and 3
-const int heading_motor_encoder_B_pin = 3;  // Must be pins 2 and 3
+const int heading_motor_encoder_A_pin = 2;  // D2 (supports interupts)
+const int heading_motor_encoder_B_pin = 3;  // D3 (supports interupts)
 
 //   D4
 const int steering_motor_speed_PWM_pin = 5;     // D5
@@ -53,6 +54,8 @@ const int heading_motor_direction_B_pin = 9;    // D9
 const int wheel_rotation_motor_speed_PWM_pin = 10;  // D10 
 // D11
 // D12
+
+//==============================================
 
 volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
 int lastEncoded = 0;          // Used to track last encoder state
@@ -78,22 +81,12 @@ void loop() {
   heading = calculateHeading(sensorValueA0, sensorValueA1);
   displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, heading);
 
-  temp_motor_speed = temp_motor_speed + temp_motor_speed_increment;
+  temp_motor_speed = get_speed_control_value();
+
   analogWrite(wheel_rotation_motor_speed_PWM_pin, temp_motor_speed);
-//  analogWrite(steering_motor_speed_PWM_pin, temp_motor_speed);
+//   analogWrite(steering_motor_speed_PWM_pin, temp_motor_speed);
 
-  if (temp_motor_speed >= 100){
-    temp_motor_speed_increment = -2;
-  }
-  if (temp_motor_speed <= 60){
-    temp_motor_speed_increment = 2;
-  }
-  delay(250);
-
-  
-//  steering_motor_speed_PWM.write(0);
-//  heading_motor_speed_PWM.write(0);
-
+// - Temporary code for wheel drive - motor encoder   
   static int lastReportedPos = 0;  // Keep track of last reported position
   if (encoderPos != lastReportedPos) {
     Serial.print("Position: ");
@@ -213,6 +206,18 @@ void updateEncoder() {
 }
 
 //------------------------------------------------------------------------
+
+  float get_speed_control_value(){
+    analogControl  = analogRead(A7);
+    temp_motor_speed = map ( analogControl, 0, 1023, 60, 120);
+    Serial.print ("Motor Speed:   Analog In: ")
+    Serial.print (analogControl);
+    Serial.print ("  Mapped:");
+    Serial.println (temp_motor_speed);
+    return temp_motor_speed;
+  }
+
+
 
 //------------------------------------------------------------------------
 
