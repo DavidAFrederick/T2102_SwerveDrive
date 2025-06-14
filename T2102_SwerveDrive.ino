@@ -1,4 +1,4 @@
-#include <Servo.h>
+////  #include <Servo.h>
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
 #define OLED_ADDR 0x3C  // Replace with your OLED's I2C address
@@ -21,18 +21,18 @@ const int steering_motor_direction_A_pin = 6;
 const int steering_motor_direction_B_pin = 7;
 const int heading_motor_direction_A_pin = 8;
 const int heading_motor_direction_B_pin = 9;
-const int heading_motor_speed_PWM_pin = 10;
+const int wheel_rotation_motor_speed_PWM_pin = 10;
 
 const int heading_motor_encoder_A_pin = 11;
 const int heading_motor_encoder_B_pin = 12;
 
-Servo steering_motor_speed_PWM;
-Servo heading_motor_speed_PWM;
+//Servo steering_motor_speed_PWM;
+//Servo heading_motor_speed_PWM;
 
 volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
 int lastEncoded = 0;          // Used to track last encoder state
 
-int temp_motor_speed = 0;
+int temp_motor_speed = 60;
 int temp_motor_speed_increment = +1;
 
 
@@ -56,14 +56,14 @@ void loop() {
 
 
   temp_motor_speed = temp_motor_speed + temp_motor_speed_increment;
-  steering_motor_speed_PWM.write(temp_motor_speed);
-  Serial.print ("Speed: ");
-  Serial.println (temp_motor_speed);
-  if (temp_motor_speed >= 180){
-    temp_motor_speed_increment = -1;
+  analogWrite(wheel_rotation_motor_speed_PWM_pin, temp_motor_speed);
+//  analogWrite(steering_motor_speed_PWM_pin, temp_motor_speed);
+
+  if (temp_motor_speed >= 100){
+    temp_motor_speed_increment = -2;
   }
-  if (temp_motor_speed <= 2){
-    temp_motor_speed_increment = 1;
+  if (temp_motor_speed <= 60){
+    temp_motor_speed_increment = 2;
   }
   delay(250);
 
@@ -102,7 +102,8 @@ void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float h
   String sensorValuesString = "";
   String headingString = "";
 
-  headingString = "Heading:    " + String(heading);
+//  headingString = "Heading:  " + String(heading)
+  headingString = "Heading:  " + String(heading)  + " " + String(temp_motor_speed);
   display.setCursor(0, 0);       // Set cursor position
   display.print(headingString);  // Print text
 
@@ -149,7 +150,7 @@ void configure_pins() {
   pinMode(steering_motor_direction_B_pin, OUTPUT);
   pinMode(heading_motor_direction_A_pin, OUTPUT);
   pinMode(heading_motor_direction_B_pin, OUTPUT);
-  pinMode(heading_motor_speed_PWM_pin, OUTPUT);
+  pinMode(wheel_rotation_motor_speed_PWM_pin, OUTPUT);
 
   digitalWrite(steering_motor_direction_A_pin, HIGH);
   digitalWrite(steering_motor_direction_B_pin, LOW);
@@ -157,8 +158,10 @@ void configure_pins() {
   digitalWrite(heading_motor_direction_B_pin, LOW);
 
 
-  steering_motor_speed_PWM.attach(steering_motor_speed_PWM_pin);
-  heading_motor_speed_PWM.attach(heading_motor_speed_PWM_pin);
+//  steering_motor_speed_PWM.attach(steering_motor_speed_PWM_pin);
+//  heading_motor_speed_PWM.attach(wheel_rotation_motor_speed_PWM_pin);
+  pinMode(steering_motor_speed_PWM_pin, OUTPUT);
+  pinMode(wheel_rotation_motor_speed_PWM_pin, OUTPUT);
 
 
   pinMode(heading_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
