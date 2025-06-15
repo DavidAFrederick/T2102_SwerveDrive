@@ -23,8 +23,8 @@ int analogControl = 0;
 
 //  A0 - [D14] - A0 - Wheel heading Sensor - Base
 //  A1 - [D15] - A1 -  Wheel heading Sensor - Inverted
-const int control_potentiometer_ground_pin = 16 // D16 [A2]
-const int control_potentiometer_5V_pin = 17  // D17 [A3]
+const int control_potentiometer_ground_pin = 16; // D16 [A2]
+const int control_potentiometer_5V_pin = 17;  // D17 [A3]
 //  A4 - [D18] - SDA - OLED Display
 //  A5 - [D19] - SDC - OLED Display
 //  A6 
@@ -83,8 +83,8 @@ void loop() {
 
   temp_motor_speed = get_speed_control_value();
 
-  analogWrite(wheel_rotation_motor_speed_PWM_pin, temp_motor_speed);
-//   analogWrite(steering_motor_speed_PWM_pin, temp_motor_speed);
+//  analogWrite(wheel_rotation_motor_speed_PWM_pin, temp_motor_speed);
+   analogWrite(steering_motor_speed_PWM_pin, temp_motor_speed);
 
 // - Temporary code for wheel drive - motor encoder   
   static int lastReportedPos = 0;  // Keep track of last reported position
@@ -210,7 +210,7 @@ void updateEncoder() {
   float get_speed_control_value(){
     analogControl  = analogRead(A7);
     temp_motor_speed = map ( analogControl, 0, 1023, 60, 120);
-    Serial.print ("Motor Speed:   Analog In: ")
+    Serial.print ("Motor Speed:   Analog In: ");
     Serial.print (analogControl);
     Serial.print ("  Mapped:");
     Serial.println (temp_motor_speed);
