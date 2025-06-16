@@ -19,6 +19,11 @@ int analogControl = 0;
 int joystick_x_value = 0;
 int joystick_y_value = 0;
 
+float y_control_value  = 0;
+float joystick_y_middle_value = 510; // 510;
+float joystick_deadzone = 5; // 5;
+float motor_speed =  0;
+
 // - - -
 
 // Rotary Encoder Test Code
@@ -66,8 +71,8 @@ const int rotary_encoder_switch_pin = 4;        // D4
 const int steering_motor_speed_PWM_pin = 5;     // D5
 const int steering_motor_direction_A_pin = 6;   // D6
 const int steering_motor_direction_B_pin = 7;   // D7
-const int heading_motor_direction_A_pin = 8;    // D8
-const int heading_motor_direction_B_pin = 9;    // D9
+const int wheel_rotation_motor_direction_A_pin = 8;    // D8
+const int wheel_rotation_motor_direction_B_pin = 9;    // D9
 const int wheel_rotation_motor_speed_PWM_pin = 10;  // D10
 const int rotary_encoder_data_pin = 11;         // D11 - (NEEDS INTERUPT SUPPORT) - Not working
 const int rotary_encoder_clock_pin = 12;        // D12 - (NEEDS INTERUPT SUPPORT) - Not working//
@@ -102,12 +107,40 @@ void loop() {
   heading = calculateHeading(sensorValueA0, sensorValueA1);
   displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, heading);
 
+
+
+
+  y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
+  motor_speed = calculate_motor_speed_value(y_control_value);
+  set_right_front_wheel_speed (motor_speed);
+  
+  
+
+
   //  analogWrite(wheel_rotation_motor_speed_PWM_pin, get_joystick_y_control_value());
   //  analogWrite(steering_motor_speed_PWM_pin, get_joystick_x_control_value());
 
+  //  set_drive_wheel_rotation_direction("forward");
+  //  set_steering_motor_direction("cw");
+  //  analogWrite(wheel_rotation_motor_speed_PWM_pin, 0);  // Motor gear running counter clockwise from top
+  //  analogWrite(steering_motor_speed_PWM_pin, 170);
+  //  delay (200);
+  //
+  //  analogWrite(wheel_rotation_motor_speed_PWM_pin, 0);
+  //  analogWrite(steering_motor_speed_PWM_pin, 0);
+  //  delay (50);
+  //
+  //  set_drive_wheel_rotation_direction("reverse");
+  //  set_steering_motor_direction("ccw");
+  //  analogWrite(wheel_rotation_motor_speed_PWM_pin, 0);  // Motor gear running counter clockwise from top
+  //  analogWrite(steering_motor_speed_PWM_pin, 170);
+  //  delay (200);
+  //
+  //  analogWrite(wheel_rotation_motor_speed_PWM_pin, 0);
+  //  analogWrite(steering_motor_speed_PWM_pin, 0);
+  //
+  //  delay (500);
 
-  analogWrite(wheel_rotation_motor_speed_PWM_pin, 60);  // Motor gear running counter clockwise from top
-  analogWrite(steering_motor_speed_PWM_pin, 0);
 
   // - Temporary code for wheel drive - motor encoder
   static int lastReportedPos = 0;  // Keep track of last reported position
@@ -209,14 +242,14 @@ void configure_pins() {
   pinMode(steering_motor_speed_PWM_pin, OUTPUT);
   pinMode(steering_motor_direction_A_pin, OUTPUT);
   pinMode(steering_motor_direction_B_pin, OUTPUT);
-  pinMode(heading_motor_direction_A_pin, OUTPUT);
-  pinMode(heading_motor_direction_B_pin, OUTPUT);
+  pinMode(wheel_rotation_motor_direction_A_pin, OUTPUT);
+  pinMode(wheel_rotation_motor_direction_B_pin, OUTPUT);
   pinMode(wheel_rotation_motor_speed_PWM_pin, OUTPUT);
 
   digitalWrite(steering_motor_direction_A_pin, HIGH);
   digitalWrite(steering_motor_direction_B_pin, LOW);
-  digitalWrite(heading_motor_direction_A_pin, HIGH);
-  digitalWrite(heading_motor_direction_B_pin, LOW);
+  digitalWrite(wheel_rotation_motor_direction_A_pin, HIGH);
+  digitalWrite(wheel_rotation_motor_direction_B_pin, LOW);
 
   pinMode(steering_motor_speed_PWM_pin, OUTPUT);
   pinMode(wheel_rotation_motor_speed_PWM_pin, OUTPUT);
@@ -248,25 +281,29 @@ void updateEncoder() {
 
 float get_joystick_x_control_value() {
   analogControl  = analogRead(A6);
-  temp_motor_speed = map ( analogControl, 0, 1023, -120, 120);
+  int motor_speed = map ( analogControl, 0, 1023, -254, 255);
   Serial.print ("X Axis:   Analog In: ");
   Serial.print (analogControl);
   Serial.print ("  Mapped:");
-  Serial.print (temp_motor_speed);
+  Serial.print (motor_speed);
   Serial.print ("                   ");
-  return temp_motor_speed;
+  return motor_speed;
 }
 
-float get_joystick_y_control_value() {
-  analogControl  = analogRead(A7);
-  temp_motor_speed = map ( analogControl, 0, 1023, -120, 120);
-  Serial.print ("Y Axis:   Analog In: ");
-  Serial.print (analogControl);
-  Serial.print ("  Mapped:");
-  Serial.println (temp_motor_speed);
-  return temp_motor_speed;
+float get_joystick_y_control_value() {    // Forward speed
+  motor_speed  = analogRead(A7);        // 0-1023
+  return motor_speed;
 }
 
+//float get_joystick_y_control_value() {    // Forward speed
+//  analogControl  = analogRead(A7);        // 0-1023
+//  int  motor_speed = map ( analogControl, 0, 1023, -254, 254);
+//  Serial.print ("Y Axis:   Analog In: ");
+//  Serial.print (analogControl);
+//  Serial.print ("  Mapped:");
+//  Serial.println (motor_speed);
+//  return motor_speed;
+//}
 
 //------------------------------------------------------------------------
 // Rotary Encoder Test Code
@@ -280,17 +317,68 @@ void RotaryChanged()
 
 }
 //------------------------------------------------------------------------
-void set_drive_wheel_rotation_direction(String direction){
-  if (direction == "forward"){
-    
+void set_drive_wheel_rotation_direction(String direction) {
+  if (direction == "forward") {
+    digitalWrite(wheel_rotation_motor_direction_A_pin, HIGH);
+    digitalWrite(wheel_rotation_motor_direction_B_pin, LOW);
   }
-  
+  else if (direction == "reverse") {
+    digitalWrite(wheel_rotation_motor_direction_A_pin, LOW);
+    digitalWrite(wheel_rotation_motor_direction_B_pin, HIGH);
+  } else {
+    Serial.println ("Error in direction selection");
+  }
 }
 
 //------------------------------------------------------------------------
+void set_steering_motor_direction(String direction) {
+  if (direction == "cw") {
+
+    digitalWrite(steering_motor_direction_A_pin, HIGH);
+    digitalWrite(steering_motor_direction_B_pin, LOW);
+  }
+  else if (direction == "ccw") {
+    digitalWrite(steering_motor_direction_A_pin, LOW);
+    digitalWrite(steering_motor_direction_B_pin, HIGH);
+
+  } else {
+    Serial.println ("Error in direction selection");
+  }
+}
+
 
 //------------------------------------------------------------------------
+float calculate_motor_speed_value(int y_control_value) {
 
+  // Forward movement >> input range 510 to 103 >> output range 0 254
+  if (y_control_value > (joystick_y_middle_value + joystick_deadzone)) {
+    set_drive_wheel_rotation_direction("forward");
+    motor_speed = map ( y_control_value, joystick_y_middle_value, 1023, 0, 254);
+    //    Serial.print (" Forward> ");
+
+    // Reverse movement >> input range 0 to 510 >> output range 254 to 0
+  } else if (y_control_value < (joystick_y_middle_value - joystick_deadzone)) {
+    set_drive_wheel_rotation_direction("reverse");
+    motor_speed = map ( y_control_value, 0, joystick_y_middle_value, 254, 0);
+    //    Serial.print (" Reverse> ");
+
+  } else if ((y_control_value > (joystick_y_middle_value - joystick_deadzone)) &&
+             (y_control_value < (joystick_y_middle_value + joystick_deadzone)) ) {
+    motor_speed = 0;
+    //    Serial.print (" Deadzone> ");
+  }
+
+  //  Serial.print ("Y Axis:   Analog In: ");
+  //  Serial.print (y_control_value);
+  //  Serial.print ("  Mapped:");
+  //  Serial.println (motor_speed);
+
+  return motor_speed;
+}
+//------------------------------------------------------------------------
+void set_right_front_wheel_speed (float motor_speed) {
+  analogWrite(wheel_rotation_motor_speed_PWM_pin, motor_speed);
+}
 //------------------------------------------------------------------------
 
 //------------------------------------------------------------------------
