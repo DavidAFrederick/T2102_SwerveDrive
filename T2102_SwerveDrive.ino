@@ -19,7 +19,7 @@ int analogControl = 0;
 int joystick_x_value = 0;
 int joystick_y_value = 0;
 
-// - - - 
+// - - -
 
 // Rotary Encoder Test Code
 int Counter1 = 0, LastCount1 = 0; //uneeded just for test
@@ -29,7 +29,7 @@ void RotaryChanged(); //we need to declare the func above so Rotary goes to the 
 
 RotaryEncoder Rotary1(&RotaryChanged, 11, 12, 4); // Pins  (DT),  (CLK),  (SW)
 
-// - - - 
+// - - -
 
 
 // Arduino Pin Assignments
@@ -40,7 +40,7 @@ RotaryEncoder Rotary1(&RotaryChanged, 11, 12, 4); // Pins  (DT),  (CLK),  (SW)
 //  A0 - [D14] - A0 - Wheel heading Sensor - Base
 //  A1 - [D15] - A1 -  Wheel heading Sensor - Inverted
 
-// D16 - 
+// D16 -
 const int joystickSwitch_pin = 17; // D17 [A3]
 //  A4 - [D18] - SDA - OLED Display
 //  A5 - [D19] - SDC - OLED Display
@@ -52,7 +52,7 @@ const int joystickSwitch_pin = 17; // D17 [A3]
 //  Ground - Used
 //  Vin - Not Used
 
-// - - - - - - - - - - - - 
+// - - - - - - - - - - - -
 
 // D1 - Not usable
 // D0 - Not usable
@@ -62,13 +62,13 @@ const int joystickSwitch_pin = 17; // D17 [A3]
 const int heading_motor_encoder_A_pin = 2;  // D2 (supports interupts)
 const int heading_motor_encoder_B_pin = 3;  // D3 (supports interupts)
 
-const int rotary_encoder_switch_pin = 4;        // D4 
+const int rotary_encoder_switch_pin = 4;        // D4
 const int steering_motor_speed_PWM_pin = 5;     // D5
 const int steering_motor_direction_A_pin = 6;   // D6
 const int steering_motor_direction_B_pin = 7;   // D7
 const int heading_motor_direction_A_pin = 8;    // D8
 const int heading_motor_direction_B_pin = 9;    // D9
-const int wheel_rotation_motor_speed_PWM_pin = 10;  // D10 
+const int wheel_rotation_motor_speed_PWM_pin = 10;  // D10
 const int rotary_encoder_data_pin = 11;         // D11 - (NEEDS INTERUPT SUPPORT) - Not working
 const int rotary_encoder_clock_pin = 12;        // D12 - (NEEDS INTERUPT SUPPORT) - Not working//
 
@@ -89,8 +89,8 @@ void setup() {
   configure_pins();
 
   // - - - Rotary Encoder Test Code --
-  Rotary1.setup();  
-  //- - - - 
+  Rotary1.setup();
+  //- - - -
 }
 
 //=============================================================================
@@ -102,13 +102,14 @@ void loop() {
   heading = calculateHeading(sensorValueA0, sensorValueA1);
   displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, heading);
 
-  temp_motor_speed = 0;
-//  temp_motor_speed = get_speed_control_value();  Old Potentiometer control
+  //  analogWrite(wheel_rotation_motor_speed_PWM_pin, get_joystick_y_control_value());
+  //  analogWrite(steering_motor_speed_PWM_pin, get_joystick_x_control_value());
 
-   analogWrite(wheel_rotation_motor_speed_PWM_pin, get_joystick_y_control_value());
-   analogWrite(steering_motor_speed_PWM_pin, get_joystick_x_control_value());
 
-// - Temporary code for wheel drive - motor encoder   
+  analogWrite(wheel_rotation_motor_speed_PWM_pin, 60);  // Motor gear running counter clockwise from top
+  analogWrite(steering_motor_speed_PWM_pin, 0);
+
+  // - Temporary code for wheel drive - motor encoder
   static int lastReportedPos = 0;  // Keep track of last reported position
   if (encoderPos != lastReportedPos) {
     Serial.print("Position: ");
@@ -118,25 +119,25 @@ void loop() {
 
   // - - - - -
   // Test of Joystick
-//  get_joystick_x_control_value();
-//  get_joystick_y_control_value();
+  //  get_joystick_x_control_value();
+  //  get_joystick_y_control_value();
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Rotary Encoder Test Code
 
-  if (Rotary1.GetButtonDown())  
-    Serial.println("Button 1 down");    
+  if (Rotary1.GetButtonDown())
+    Serial.println("Button 1 down");
 
-  if (LastCount1 != Counter1)  
+  if (LastCount1 != Counter1)
   {
-    Serial.print("Counter1:  ");    
-    Serial.println(Counter1);    
-    LastCount1 = Counter1;    
+    Serial.print("Counter1:  ");
+    Serial.println(Counter1);
+    LastCount1 = Counter1;
   }
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-  
+
 }
 //========================================================================
 
@@ -162,7 +163,7 @@ void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float h
   String sensorValuesString = "";
   String headingString = "";
 
-//  headingString = "Heading:  " + String(heading)
+  //  headingString = "Heading:  " + String(heading)
   headingString = "Heading:  " + String(heading)  + " " + String(temp_motor_speed);
   display.setCursor(0, 0);       // Set cursor position
   display.print(headingString);  // Print text
@@ -225,12 +226,6 @@ void configure_pins() {
   attachInterrupt(digitalPinToInterrupt(heading_motor_encoder_A_pin), updateEncoder, CHANGE);
   attachInterrupt(digitalPinToInterrupt(heading_motor_encoder_B_pin), updateEncoder, CHANGE);
 
-//  pinMode(control_potentiometer_ground_pin, OUTPUT);
-//  pinMode(control_potentiometer_5V_pin, OUTPUT);
-//  digitalWrite(control_potentiometer_ground_pin, LOW);
-//  digitalWrite(control_potentiometer_5V_pin, HIGH);
-
-
 }
 
 //------------------------------------------------------------------------
@@ -251,39 +246,61 @@ void updateEncoder() {
 
 //------------------------------------------------------------------------
 
-  float get_joystick_x_control_value(){
-    analogControl  = analogRead(A6);
-    temp_motor_speed = map ( analogControl, 0, 1023, 60, 120);
-    Serial.print ("X Axis:   Analog In: ");
-    Serial.print (analogControl);
-    Serial.print ("  Mapped:");
-    Serial.print (temp_motor_speed);
-    Serial.print ("                   ");
-    return temp_motor_speed;
-  }
+float get_joystick_x_control_value() {
+  analogControl  = analogRead(A6);
+  temp_motor_speed = map ( analogControl, 0, 1023, -120, 120);
+  Serial.print ("X Axis:   Analog In: ");
+  Serial.print (analogControl);
+  Serial.print ("  Mapped:");
+  Serial.print (temp_motor_speed);
+  Serial.print ("                   ");
+  return temp_motor_speed;
+}
 
-  float get_joystick_y_control_value(){
-    analogControl  = analogRead(A7);
-    temp_motor_speed = map ( analogControl, 0, 1023, 60, 120);
-    Serial.print ("Y Axis:   Analog In: ");
-    Serial.print (analogControl);
-    Serial.print ("  Mapped:");
-    Serial.println (temp_motor_speed);
-    return temp_motor_speed;
-  }
+float get_joystick_y_control_value() {
+  analogControl  = analogRead(A7);
+  temp_motor_speed = map ( analogControl, 0, 1023, -120, 120);
+  Serial.print ("Y Axis:   Analog In: ");
+  Serial.print (analogControl);
+  Serial.print ("  Mapped:");
+  Serial.println (temp_motor_speed);
+  return temp_motor_speed;
+}
 
 
 //------------------------------------------------------------------------
-// Rotary Encoder Test Code 
+// Rotary Encoder Test Code
 void RotaryChanged()
 {
   const unsigned int state1 = Rotary1.GetState();
-  if (state1 & DIR_CW)  
+  if (state1 & DIR_CW)
     Counter1++;
-  if (state1 & DIR_CCW)  
-    Counter1--;    
+  if (state1 & DIR_CCW)
+    Counter1--;
 
 }
+//------------------------------------------------------------------------
+void set_drive_wheel_rotation_direction(String direction){
+  if (direction == "forward"){
+    
+  }
+  
+}
+
+//------------------------------------------------------------------------
+
+//------------------------------------------------------------------------
+
+//------------------------------------------------------------------------
+
+//------------------------------------------------------------------------
+
+//------------------------------------------------------------------------
+
+//------------------------------------------------------------------------
+
+//------------------------------------------------------------------------
+
 //------------------------------------------------------------------------
 
 //------------------------------------------------------------------------
