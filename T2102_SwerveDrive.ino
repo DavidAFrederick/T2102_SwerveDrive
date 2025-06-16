@@ -16,35 +16,32 @@ float sensorValueA1Component = 0;
 float heading = 0;
 int analogControl = 0;
 
+//==================================================================================
+//==================================================================================
 // Arduino Pin Assignments
 // D13   - Not Used
 // 3.3v  - Not Used
 // Ref   - Not Used
-
 //  A0 - [D14] - A0 - Wheel heading Sensor - Base
-//  A1 - [D15] - A1 -  Wheel heading Sensor - Inverted
-const int control_potentiometer_ground_pin = 16; // D16 [A2]
-const int control_potentiometer_5V_pin = 17;  // D17 [A3]
+//  A1 - [D15] - A1 - Wheel heading Sensor - Inverted
+//  D16 [A2]
+//  D17 [A3]
 //  A4 - [D18] - SDA - OLED Display
 //  A5 - [D19] - SDC - OLED Display
 //  A6 
 //  A7 - Control Potentiometer - Analog signal
-
 //  5v - Used
 //  Reset - Not used
 //  Ground - Used
 //  Vin - Not Used
 
 // - - - - - - - - - - - - 
-
 // D1 - Not usable
 // D0 - Not usable
 // Reset - Not used
 // Ground
-
 const int heading_motor_encoder_A_pin = 2;  // D2 (supports interupts)
 const int heading_motor_encoder_B_pin = 3;  // D3 (supports interupts)
-
 //   D4
 const int steering_motor_speed_PWM_pin = 5;     // D5
 const int steering_motor_direction_A_pin = 6;   // D6
@@ -54,8 +51,8 @@ const int heading_motor_direction_B_pin = 9;    // D9
 const int wheel_rotation_motor_speed_PWM_pin = 10;  // D10 
 // D11
 // D12
-
-//==============================================
+//==================================================================================
+//==================================================================================
 
 volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
 int lastEncoded = 0;          // Used to track last encoder state
