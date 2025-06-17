@@ -355,22 +355,29 @@ float convert_joystick_to_heading_value(int joystick_x_value) {
   // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
   // When the joystick to centered (510), the wheels will turn to center
 
+//  float joystick_y_middle_value = 510;
+//float joystick_x_middle_value = 510;
+//float joystick_deadzone = 5;
+
   float heading_value = 0;
 
   // When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90
-  if (joystick_x_value > (joystick_x_middle_value + joystick_deadzone)) {
+//  if (joystick_x_value > (joystick_x_middle_value + joystick_deadzone)) {
+  if (joystick_x_value > 515) {
     set_steering_motor_direction("ccw");
     heading_value = map(joystick_x_value, joystick_x_middle_value, 1023, 0, -90);
     Serial.print(" CCW > ");
 
     // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
-  } else if (joystick_x_value < (joystick_x_middle_value - joystick_deadzone)) {
+  } else if (joystick_x_value < 505) {
+//  } else if (joystick_x_value < (joystick_x_middle_value - joystick_deadzone)) {
     set_steering_motor_direction("cw");
     heading_value = map(joystick_x_value, joystick_x_middle_value, 0, 0, 90);
     Serial.print(" CW > ");
 
     // When the joystick to centered (510), the wheels will turn to center
-  } else if ((joystick_x_value > (joystick_x_middle_value - joystick_deadzone)) && (joystick_x_value < (joystick_x_middle_value + joystick_deadzone))) {
+//  } else if ((joystick_x_value > (joystick_x_middle_value - joystick_deadzone)) && (joystick_x_value < (joystick_x_middle_value + joystick_deadzone))) {
+  } else if ((joystick_x_value > 505) && (joystick_x_value < 515)) {
     heading_value = 0;
     Serial.print(" Deadzone > ");
   }
@@ -396,12 +403,17 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
  // IF current is at 30 
  // ... IF hd is positive, set motor to turn wheel heading cw
  // ... IF hd is negative, set motor to turn wheel heading ccw
+
+  Serial.print("Current: ");
+  Serial.print(current_heading);
+  Serial.print("  desire: ");
+  Serial.print(desired_wheel_heading_value);
  
-  float heading_alignment_tolerance = 2;
+  float heading_alignment_tolerance = 5;
   float heading_change_speed = 120;
 
   float heading_difference = desired_wheel_heading_value - current_heading;
-  Serial.print("heading_difference: ");
+  Serial.print("   Hd diff: ");
   Serial.print(heading_difference);
   Serial.print("      ");
 
