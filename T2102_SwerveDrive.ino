@@ -86,6 +86,17 @@ int temp_motor_speed = 60;
 int temp_motor_speed_increment = +1;
 
 
+
+
+
+
+
+
+
+
+
+
+
 //=============================================================================
 
 void setup() {
@@ -98,6 +109,13 @@ void setup() {
   Rotary1.setup();
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
+
+
+
+
+
+
+
 
 //=============================================================================
 
@@ -115,7 +133,7 @@ void loop() {
   set_right_front_wheel_speed(motor_speed);
 
   // Used for wheel steering
-  x_control_value = get_joystick_x_control_value();  //   Returned value range:  0-1023
+  x_control_value = get_joystick_x_control_value();  //   Returned value range:  -254, 255
   // When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90
   // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
   // When the joystick to centered (510), the wheels will turn to center
@@ -258,13 +276,14 @@ void updateEncoder() {
 
 float get_joystick_x_control_value() {
   analogControl = analogRead(A6);
-  int motor_speed = map(analogControl, 0, 1023, -254, 255);
-  Serial.print("X Axis:   Analog In: ");
-  Serial.print(analogControl);
-  Serial.print("  Mapped:");
-  Serial.print(motor_speed);
-  Serial.print("                   ");
-  return motor_speed;
+  return analogControl;
+//  int motor_speed = map(analogControl, 0, 1023, -254, 255);
+//  Serial.print("GET X Axis:   Analog In: ");
+//  Serial.print(analogControl);
+//  Serial.print("  Mapped:");
+//  Serial.print(motor_speed);
+//  Serial.print("                   ");
+//  return motor_speed;
 }
 
 float get_joystick_y_control_value() {  // Forward speed
@@ -369,26 +388,26 @@ float convert_joystick_to_heading_value(int joystick_x_value) {
   if (joystick_x_value > 515) {
     set_steering_motor_direction("ccw");
     heading_value = map(joystick_x_value, joystick_x_middle_value, 1023, 0, -90);
-    Serial.print(" CCW > ");
+//    Serial.print(" CCW > ");
 
     // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
   } else if (joystick_x_value < 505) {
 //  } else if (joystick_x_value < (joystick_x_middle_value - joystick_deadzone)) {
     set_steering_motor_direction("cw");
     heading_value = map(joystick_x_value, joystick_x_middle_value, 0, 0, 90);
-    Serial.print(" CW > ");
+//    Serial.print(" CW > ");
 
     // When the joystick to centered (510), the wheels will turn to center
 //  } else if ((joystick_x_value > (joystick_x_middle_value - joystick_deadzone)) && (joystick_x_value < (joystick_x_middle_value + joystick_deadzone))) {
   } else if ((joystick_x_value > 505) && (joystick_x_value < 515)) {
     heading_value = 0;
-    Serial.print(" Deadzone > ");
+//    Serial.print(" Deadzone > ");
   }
 
-  Serial.print("X Axis:   Analog In: ");
-  Serial.print(joystick_x_value);
-  Serial.print("  Mapped heading: ");
-  Serial.println(heading_value);
+//  Serial.print("X Axis:::   Analog In: ");
+//  Serial.print(joystick_x_value);
+//  Serial.print("  Mapped heading: ");
+//  Serial.println(heading_value);
 
   return heading_value;
 }
@@ -407,18 +426,22 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
  // ... IF hd is positive, set motor to turn wheel heading cw
  // ... IF hd is negative, set motor to turn wheel heading ccw
 
-  Serial.print("Current: ");
-  Serial.print(current_heading);
-  Serial.print("  desire: ");
-  Serial.print(desired_wheel_heading_value);
+
  
   float heading_alignment_tolerance = 5;
   float heading_change_speed = 120;
 
   float heading_difference = desired_wheel_heading_value - current_heading;
+  
+  Serial.print("Current: ");
+  Serial.print(current_heading);
+  Serial.print("  desire: ");
+  Serial.print(desired_wheel_heading_value);
   Serial.print("   Hd diff: ");
   Serial.print(heading_difference);
   Serial.print("      ");
+
+  int speed1 = 200;
 
   // No need to change heading
   if ( abs(heading_difference) < heading_alignment_tolerance ){
@@ -428,17 +451,22 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
   }
   else if (heading_difference > heading_alignment_tolerance){
     Serial.print("Need to turn right");
-    heading_change_speed = 120;
+    heading_change_speed = -speed1;
 
   } else{
     Serial.print("Need to turn Left ");
-    heading_change_speed = -120;
+    heading_change_speed = speed1;
 
   }
 
   Serial.print("   heading_change_speed: ");
   Serial.println(heading_change_speed);
   analogWrite(steering_motor_speed_PWM_pin, heading_change_speed);
+//
+//  delay(300);
+//  analogWrite(steering_motor_speed_PWM_pin, 0);
+//  delay (300);
+
 }
 
 
