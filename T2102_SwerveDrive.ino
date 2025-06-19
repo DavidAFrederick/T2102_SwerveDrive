@@ -1,3 +1,5 @@
+//  June 18, 2025 8:10 PM
+//
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
 #define OLED_ADDR 0x3C  // Replace with your OLED's I2C address
@@ -112,6 +114,7 @@ void loop() {
   motor_speed = calculate_motor_speed_value(y_control_value);
   set_right_front_wheel_speed(motor_speed);
 
+  // Used for wheel steering
   x_control_value = get_joystick_x_control_value();  //   Returned value range:  0-1023
   // When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90
   // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
