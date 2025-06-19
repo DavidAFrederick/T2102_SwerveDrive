@@ -29,6 +29,9 @@ float joystick_deadzone = 5;
 float motor_speed = 0;
 float desired_wheel_heading_value = 0;
 
+int loop_counter = 0;
+int nextTime = 0;
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Rotary Encoder Test Code
 int Counter1 = 0, LastCount1 = 0;                  //uneeded just for test
@@ -100,7 +103,9 @@ int temp_motor_speed_increment = +1;
 //=============================================================================
 
 void setup() {
-  Serial.begin(9600);
+//  Serial.begin(9600);
+  Serial.begin(230400);
+  
   initializeDisplay();
   configure_pins();
 
@@ -121,11 +126,24 @@ void setup() {
 
 void loop() {
 
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  loop_counter = loop_counter + 1;
+  if (millis() > nextTime)
+  {
+    nextTime += 1000;
+    Serial.print("Count: ");
+    Serial.print(loop_counter);
+    Serial.print("   Time: ");
+    Serial.println(millis());
+    loop_counter = 0;
+  }
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  
   // Wheel Heading sensor
   sensorValueA0 = returnSensor(A0);
   sensorValueA1 = returnSensor(A1);
   current_heading = calculateHeading(sensorValueA0, sensorValueA1);
-  displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, current_heading);
+//  displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, current_heading);   // Commented out to speed up
 
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
@@ -148,8 +166,8 @@ void loop() {
   // - Temporary code for wheel drive - motor encoder
   static int lastReportedPos = 0;  // Keep track of last reported position
   if (encoderPos != lastReportedPos) {
-    Serial.print("Position: ");
-    Serial.println(encoderPos);
+//    Serial.print("Position: ");
+//    Serial.println(encoderPos);
     lastReportedPos = encoderPos;
   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -203,9 +221,9 @@ void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float h
   //  display.print(sensorValuesString); // Print text
 
   display.display();       // Update the display
-  delay(10);               // Wait for 2 seconds
+  delay(10);               // 
   display.clearDisplay();  // Clear the display
-  delay(1);                // Wait for 2 seconds
+  delay(1);                // 
 }
 
 //------------------------------------------------------------------------
@@ -435,32 +453,38 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
   
   Serial.print("Current: ");
   Serial.print(current_heading);
-  Serial.print("  desire: ");
+  Serial.print("  desired: ");
   Serial.print(desired_wheel_heading_value);
   Serial.print("   Hd diff: ");
-  Serial.print(heading_difference);
-  Serial.print("      ");
+  Serial.println(heading_difference);
+//  Serial.print("      ");
 
-  int speed1 = 200;
+
+// No printing:  About 1700 loops per second
+// Display on OLED: about 6 loops per second
+// Disabled OLED and enabled printing at 9600:  19 Loops per second
+// Disabled OLED and enabled printing at 11500:  239 loops per second
+
+  int speed1 = 120;
 
   // No need to change heading
   if ( abs(heading_difference) < heading_alignment_tolerance ){
     // No need to change heading
-    Serial.print("heading is good   ");
+//    Serial.print("heading is good   ");
     heading_change_speed = 0;
   }
   else if (heading_difference > heading_alignment_tolerance){
-    Serial.print("Need to turn right");
+//    Serial.print("Need to turn right");
     heading_change_speed = -speed1;
 
   } else{
-    Serial.print("Need to turn Left ");
+//    Serial.print("Need to turn Left ");
     heading_change_speed = speed1;
 
   }
 
-  Serial.print("   heading_change_speed: ");
-  Serial.println(heading_change_speed);
+//  Serial.print("   heading_change_speed: ");
+//  Serial.println(heading_change_speed);
   analogWrite(steering_motor_speed_PWM_pin, heading_change_speed);
 //
 //  delay(300);
