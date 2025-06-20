@@ -1,4 +1,4 @@
-//  June 18, 2025 8:10 PM
+//  June 20, 2025 10:22 AM
 //
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
@@ -135,7 +135,7 @@ void loop() {
   if (millis() > nextTime)
   {
     //    nextTime += 1000;
-    nextTime += 333;
+    nextTime += 200;
     //    Serial.print("Count: ");
     //    Serial.print(loop_counter);
     //    Serial.print("   Time: ");
@@ -282,8 +282,8 @@ void configure_pins() {
   digitalWrite(wheel_rotation_motor_direction_A_pin, HIGH);
   digitalWrite(wheel_rotation_motor_direction_B_pin, LOW);
 
-  pinMode(steering_motor_speed_PWM_pin, OUTPUT);
-  pinMode(wheel_rotation_motor_speed_PWM_pin, OUTPUT);
+  //  pinMode(steering_motor_speed_PWM_pin, OUTPUT);  // Why duplicated
+  //  pinMode(wheel_rotation_motor_speed_PWM_pin, OUTPUT);
 
   // Signals to Wheel Rotation Drive Motor Encoder
   pinMode(heading_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
@@ -474,39 +474,40 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
   float heading_difference = desired_wheel_heading_value - current_heading;
 
 
-  //  Serial.print("      ");
-
-
   // No printing:  About 1700 loops per second
   // Display on OLED: about 6 loops per second
   // Disabled OLED and enabled printing at 9600:  19 Loops per second
   // Disabled OLED and enabled printing at 11500:  239 loops per second
 
-  int speed1 = 120;
+  int speed1 = 120;   //  ERROR Get rid of this
   int option = 0;
 
-  // No need to change heading
-  if ( abs(heading_difference) < heading_alignment_tolerance ) {
-    // No need to change heading
+  // Check to see if within the tolerance window
+  if ( abs(heading_difference) <= heading_alignment_tolerance ) {
     //    Serial.print("heading is good   ");
     option = 1;
     heading_change_speed = 0;
   }
-  else if ((heading_difference >= 0) && (abs(heading_difference) > heading_alignment_tolerance)) {
-    //    Serial.print("Need to turn right");
-    heading_change_speed = -speed1;
-    option = 2;
+  else   //  Heading outside of tolerance window
+  {   
+    if (heading_difference >= 0) {
+      //    Serial.print("Need to turn right");
+      heading_change_speed = heading_change_speed;
+      option = 2;
+    }
+    else if (heading_difference < 0) {
+      //    Serial.print("Need to turn right");
+      heading_change_speed = -heading_change_speed;
+      option = 3;
+    }
+//    else {
+//      //    Serial.print("Need to turn Left ");
+//      heading_change_speed = -heading_change_speed;  /// negated
+//      option = 4;
+//    }
   }
-  else if ((heading_difference < 0) && (abs(heading_difference) > heading_alignment_tolerance)) {
-    //    Serial.print("Need to turn right");
-    heading_change_speed = speed1;
-    option = 3;
-  }
-  else {
-    //    Serial.print("Need to turn Left ");
-    heading_change_speed = speed1;
-    option = 4;
-  }
+
+
 
   if (debugflag) {
     Serial.print("Ct: ");
@@ -540,15 +541,43 @@ void stopWheelSteeringMotor() {
 }
 //------------------------------------------------------------------------
 void runWheelSteeringMotor(float local_motorSpeed) {
+  bool first_forward = true;
+  bool first_reverse  = true;
+
   // Input range is -254 to + 254
   // If input is greater than zero, set motor to forward and run the motor
   // If input is less than zero, set motor to reverse direction, negate the input and run the motor
 
+//local_motorSpeed = 100;  // CCW
+//local_motorSpeed = -100;  // CW
+
+
+if (debugflag) 
+  {
+    Serial.print("Speed ");
+    Serial.println(local_motorSpeed);
+  }
+
+
   if (local_motorSpeed >= 0) {
+    set_steering_motor_direction("ccw");
     analogWrite(steering_motor_speed_PWM_pin, local_motorSpeed);
+//        if (first_forward){
+//          first_forward = false;
+//          first_reverse  = true;
+//          Serial.print("First forward: ");
+//          Serial.println(local_motorSpeed);
+//        }
   }
   else if (local_motorSpeed < 0) {
+    set_steering_motor_direction("cw");
     analogWrite(steering_motor_speed_PWM_pin, -local_motorSpeed);
+//        if (first_forward){
+//          first_forward = true;
+//          first_reverse  = false;
+//          Serial.print("First Reverse: ");
+//          Serial.println(local_motorSpeed);
+//        }
   }
 }
 
@@ -572,12 +601,12 @@ bool driveMotorToHome() { //  Returns true when completer
       Serial.println("Homing Steering motor - Complete 1");
       delay(2000);
     }
-    if (local_heading >= 0) 
+    if (local_heading >= 0)
     {
       runWheelSteeringMotor (homing_speed);   // 0-254 is CountClockwise, -254 to 0 is Clockwise
       Serial.print("Homing Steering motor - Positive  ");
     }
-    else 
+    else
     {
       runWheelSteeringMotor (-homing_speed);   // 0-254 is CountClockwise, -254 to 0 is Clockwise
       Serial.print("Homing Steering motor - Negative  ");
