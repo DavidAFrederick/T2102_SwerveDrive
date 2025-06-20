@@ -30,7 +30,7 @@ float motor_speed = 0;
 float desired_wheel_heading_value = 0;
 
 int loop_counter = 0;
-int nextTime = 0;
+long nextTime = 0;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Rotary Encoder Test Code
@@ -87,7 +87,8 @@ int lastEncoded = 0;          // Used to track last encoder state
 
 int temp_motor_speed = 60;
 int temp_motor_speed_increment = +1;
-
+bool debugflag = false;
+bool homeWheel = false;
 
 
 
@@ -103,9 +104,10 @@ int temp_motor_speed_increment = +1;
 //=============================================================================
 
 void setup() {
-//  Serial.begin(9600);
-  Serial.begin(230400);
-  
+  Serial.begin(9600);
+  // Serial.begin(19200);
+  //  Serial.begin(57600);
+
   initializeDisplay();
   configure_pins();
 
@@ -126,48 +128,63 @@ void setup() {
 
 void loop() {
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   loop_counter = loop_counter + 1;
+  debugflag = false;
+
   if (millis() > nextTime)
   {
-    nextTime += 1000;
-    Serial.print("Count: ");
-    Serial.print(loop_counter);
-    Serial.print("   Time: ");
-    Serial.println(millis());
+    //    nextTime += 1000;
+    nextTime += 333;
+    //    Serial.print("Count: ");
+    //    Serial.print(loop_counter);
+    //    Serial.print("   Time: ");
+    //    Serial.println(millis());
     loop_counter = 0;
+    debugflag = true;
   }
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-  
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
   // Wheel Heading sensor
-  sensorValueA0 = returnSensor(A0);
-  sensorValueA1 = returnSensor(A1);
-  current_heading = calculateHeading(sensorValueA0, sensorValueA1);
-//  displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, current_heading);   // Commented out to speed up
+  current_heading = readCurrentHeading();
+  //  displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, current_heading);   // Commented out to speed up
 
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
   motor_speed = calculate_motor_speed_value(y_control_value);
   set_right_front_wheel_speed(motor_speed);
 
-  // Used for wheel steering
-  x_control_value = get_joystick_x_control_value();  //   Returned value range:  -254, 255
-  // When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90
-  // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
-  // When the joystick to centered (510), the wheels will turn to center
+  //  When the joystick button is pressed, drive the wheel direction to zero.
+  if (JoystickButtonPressed()) {
+    homeWheel = true;
+    stopWheelSteeringMotor();
+    driveMotorToHome();
+    Serial.println("Homing Complete");
+    delay (2000);
+    homeWheel = false;
 
-  desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
-  set_right_front_wheel_heading(desired_wheel_heading_value, current_heading);
-  //  analogWrite(steering_motor_speed_PWM_pin, get_joystick_x_control_value());
+  }
 
+  // Do not steer the wheel once the home joystick button is pressed
+  if (homeWheel == false) {
+    // Used for wheel steering
+    x_control_value = get_joystick_x_control_value();  //   Returned value range:  -254, 255
+    // When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90
+    // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
+    // When the joystick to centered (510), the wheels will turn to center
+
+    desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
+    set_right_front_wheel_heading(desired_wheel_heading_value, current_heading);
+    //  analogWrite(steering_motor_speed_PWM_pin, get_joystick_x_control_value());
+  }
 
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // - Temporary code for wheel drive - motor encoder
   static int lastReportedPos = 0;  // Keep track of last reported position
   if (encoderPos != lastReportedPos) {
-//    Serial.print("Position: ");
-//    Serial.println(encoderPos);
+    //    Serial.print("Position: ");
+    //    Serial.println(encoderPos);
     lastReportedPos = encoderPos;
   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -221,9 +238,9 @@ void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float h
   //  display.print(sensorValuesString); // Print text
 
   display.display();       // Update the display
-  delay(10);               // 
+  delay(10);               //
   display.clearDisplay();  // Clear the display
-  delay(1);                // 
+  delay(1);                //
 }
 
 //------------------------------------------------------------------------
@@ -252,7 +269,7 @@ float calculateHeading(float sensorValueA0, float sensorValueA1) {
 //------------------------------------------------------------------------
 void configure_pins() {
 
-  // pinMode(ledPin, OUTPUT);
+  // Signals to Motor Controller
   pinMode(steering_motor_speed_PWM_pin, OUTPUT);
   pinMode(steering_motor_direction_A_pin, OUTPUT);
   pinMode(steering_motor_direction_B_pin, OUTPUT);
@@ -268,10 +285,15 @@ void configure_pins() {
   pinMode(steering_motor_speed_PWM_pin, OUTPUT);
   pinMode(wheel_rotation_motor_speed_PWM_pin, OUTPUT);
 
+  // Signals to Wheel Rotation Drive Motor Encoder
   pinMode(heading_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
   pinMode(heading_motor_encoder_B_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
   attachInterrupt(digitalPinToInterrupt(heading_motor_encoder_A_pin), updateEncoder, CHANGE);
   attachInterrupt(digitalPinToInterrupt(heading_motor_encoder_B_pin), updateEncoder, CHANGE);
+
+  // Joystick
+  pinMode(joystickSwitch_pin, INPUT_PULLUP);
+
 }
 
 //------------------------------------------------------------------------
@@ -295,13 +317,13 @@ void updateEncoder() {
 float get_joystick_x_control_value() {
   analogControl = analogRead(A6);
   return analogControl;
-//  int motor_speed = map(analogControl, 0, 1023, -254, 255);
-//  Serial.print("GET X Axis:   Analog In: ");
-//  Serial.print(analogControl);
-//  Serial.print("  Mapped:");
-//  Serial.print(motor_speed);
-//  Serial.print("                   ");
-//  return motor_speed;
+  //  int motor_speed = map(analogControl, 0, 1023, -254, 255);
+  //  Serial.print("GET X Axis:   Analog In: ");
+  //  Serial.print(analogControl);
+  //  Serial.print("  Mapped:");
+  //  Serial.print(motor_speed);
+  //  Serial.print("                   ");
+  //  return motor_speed;
 }
 
 float get_joystick_y_control_value() {  // Forward speed
@@ -395,37 +417,37 @@ float convert_joystick_to_heading_value(int joystick_x_value) {
   // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
   // When the joystick to centered (510), the wheels will turn to center
 
-//  float joystick_y_middle_value = 510;
-//float joystick_x_middle_value = 510;
-//float joystick_deadzone = 5;
+  //  float joystick_y_middle_value = 510;
+  //float joystick_x_middle_value = 510;
+  //float joystick_deadzone = 5;
 
   float heading_value = 0;
 
   // When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90
-//  if (joystick_x_value > (joystick_x_middle_value + joystick_deadzone)) {
+  //  if (joystick_x_value > (joystick_x_middle_value + joystick_deadzone)) {
   if (joystick_x_value > 515) {
-    set_steering_motor_direction("ccw");
+    set_steering_motor_direction("ccw");    ////  ERROR - THESE DON'T BELONG HERE, WE ARE NOT MOVING THE MOTOR
     heading_value = map(joystick_x_value, joystick_x_middle_value, 1023, 0, -90);
-//    Serial.print(" CCW > ");
+    //    Serial.print(" CCW > ");
 
     // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
   } else if (joystick_x_value < 505) {
-//  } else if (joystick_x_value < (joystick_x_middle_value - joystick_deadzone)) {
-    set_steering_motor_direction("cw");
+    //  } else if (joystick_x_value < (joystick_x_middle_value - joystick_deadzone)) {
+    set_steering_motor_direction("cw");  ////  ERROR - THESE DON'T BELONG HERE, WE ARE NOT MOVING THE MOTOR
     heading_value = map(joystick_x_value, joystick_x_middle_value, 0, 0, 90);
-//    Serial.print(" CW > ");
+    //    Serial.print(" CW > ");
 
     // When the joystick to centered (510), the wheels will turn to center
-//  } else if ((joystick_x_value > (joystick_x_middle_value - joystick_deadzone)) && (joystick_x_value < (joystick_x_middle_value + joystick_deadzone))) {
+    //  } else if ((joystick_x_value > (joystick_x_middle_value - joystick_deadzone)) && (joystick_x_value < (joystick_x_middle_value + joystick_deadzone))) {
   } else if ((joystick_x_value > 505) && (joystick_x_value < 515)) {
     heading_value = 0;
-//    Serial.print(" Deadzone > ");
+    //    Serial.print(" Deadzone > ");
   }
 
-//  Serial.print("X Axis:::   Analog In: ");
-//  Serial.print(joystick_x_value);
-//  Serial.print("  Mapped heading: ");
-//  Serial.println(heading_value);
+  //  Serial.print("X Axis:::   Analog In: ");
+  //  Serial.print(joystick_x_value);
+  //  Serial.print("  Mapped heading: ");
+  //  Serial.println(heading_value);
 
   return heading_value;
 }
@@ -433,66 +455,148 @@ float convert_joystick_to_heading_value(int joystick_x_value) {
 //------------------------------------------------------------------------
 
 void set_right_front_wheel_heading(float desired_wheel_heading_value, float current_heading) {
-  // Rotate left from center is negative heading 
+  // Rotate left from center is negative heading
   // Rotate right from center is positive heading
 
- // IF current is at 0 and desired is +30 (right) THEN hd = 30 (turning right)
- // IF current is at 0 and desired is -30 (left) THEN hd = -30 (turning left)
- // IF current is at 30 (right) and desired is -30 (left) THEN hd = -60 (turning left)
- // IF current is at -30 (left) and desired is + 30 (right) THEN hd = 60 (turning right)
- // IF current is at 30 
- // ... IF hd is positive, set motor to turn wheel heading cw
- // ... IF hd is negative, set motor to turn wheel heading ccw
+  // IF current is at 0 and desired is +30 (right) THEN hd = 30 (turning right)
+  // IF current is at 0 and desired is -30 (left) THEN hd = -30 (turning left)
+  // IF current is at 30 (right) and desired is -30 (left) THEN hd = -60 (turning left)
+  // IF current is at -30 (left) and desired is + 30 (right) THEN hd = 60 (turning right)
+  // IF current is at 30
+  // ... IF hd is positive, set motor to turn wheel heading cw
+  // ... IF hd is negative, set motor to turn wheel heading ccw
 
 
- 
-  float heading_alignment_tolerance = 5;
+
+  float heading_alignment_tolerance = 10;
   float heading_change_speed = 120;
 
   float heading_difference = desired_wheel_heading_value - current_heading;
-  
-  Serial.print("Current: ");
-  Serial.print(current_heading);
-  Serial.print("  desired: ");
-  Serial.print(desired_wheel_heading_value);
-  Serial.print("   Hd diff: ");
-  Serial.println(heading_difference);
-//  Serial.print("      ");
 
 
-// No printing:  About 1700 loops per second
-// Display on OLED: about 6 loops per second
-// Disabled OLED and enabled printing at 9600:  19 Loops per second
-// Disabled OLED and enabled printing at 11500:  239 loops per second
+  //  Serial.print("      ");
+
+
+  // No printing:  About 1700 loops per second
+  // Display on OLED: about 6 loops per second
+  // Disabled OLED and enabled printing at 9600:  19 Loops per second
+  // Disabled OLED and enabled printing at 11500:  239 loops per second
 
   int speed1 = 120;
+  int option = 0;
 
   // No need to change heading
-  if ( abs(heading_difference) < heading_alignment_tolerance ){
+  if ( abs(heading_difference) < heading_alignment_tolerance ) {
     // No need to change heading
-//    Serial.print("heading is good   ");
+    //    Serial.print("heading is good   ");
+    option = 1;
     heading_change_speed = 0;
   }
-  else if (heading_difference > heading_alignment_tolerance){
-//    Serial.print("Need to turn right");
+  else if ((heading_difference >= 0) && (abs(heading_difference) > heading_alignment_tolerance)) {
+    //    Serial.print("Need to turn right");
     heading_change_speed = -speed1;
-
-  } else{
-//    Serial.print("Need to turn Left ");
+    option = 2;
+  }
+  else if ((heading_difference < 0) && (abs(heading_difference) > heading_alignment_tolerance)) {
+    //    Serial.print("Need to turn right");
     heading_change_speed = speed1;
-
+    option = 3;
+  }
+  else {
+    //    Serial.print("Need to turn Left ");
+    heading_change_speed = speed1;
+    option = 4;
   }
 
-//  Serial.print("   heading_change_speed: ");
-//  Serial.println(heading_change_speed);
-  analogWrite(steering_motor_speed_PWM_pin, heading_change_speed);
-//
-//  delay(300);
-//  analogWrite(steering_motor_speed_PWM_pin, 0);
-//  delay (300);
+  if (debugflag) {
+    Serial.print("Ct: ");
+    Serial.print(current_heading);
+    Serial.print(" Dd: ");
+    Serial.print(desired_wheel_heading_value);
+    Serial.print(" diff: ");
+    Serial.print(heading_difference);
+    Serial.print(" HC_speed: ");
+    Serial.print(heading_change_speed);
+    Serial.print(" case: ");
+    Serial.println(option);
+  }
+  //  analogWrite(steering_motor_speed_PWM_pin, heading_change_speed);  //  ERROR __ NEED TO CHANGE DIRECTION, CAN"T USE NEGATIVE VALUES
+  runWheelSteeringMotor( heading_change_speed);
 
 }
 
+
+//------------------------------------------------------------------------
+bool JoystickButtonPressed() {
+  //  Released = 1 and pressed = 0
+  int pinInputValue = !digitalRead(joystickSwitch_pin);
+  return pinInputValue;
+}
+
+//------------------------------------------------------------------------
+void stopWheelSteeringMotor() {
+  analogWrite(steering_motor_speed_PWM_pin, 0);
+  //    Serial.println("Stopping Steering motor");
+}
+//------------------------------------------------------------------------
+void runWheelSteeringMotor(float local_motorSpeed) {
+  // Input range is -254 to + 254
+  // If input is greater than zero, set motor to forward and run the motor
+  // If input is less than zero, set motor to reverse direction, negate the input and run the motor
+
+  if (local_motorSpeed >= 0) {
+    analogWrite(steering_motor_speed_PWM_pin, local_motorSpeed);
+  }
+  else if (local_motorSpeed < 0) {
+    analogWrite(steering_motor_speed_PWM_pin, -local_motorSpeed);
+  }
+}
+
+//------------------------------------------------------------------------
+bool driveMotorToHome() { //  Returns true when completer
+  bool homingDone = false;
+  float local_heading_tolerance = 10;
+  float local_heading = readCurrentHeading();
+  float homing_speed = 100;
+  Serial.println("Homing Steering motor - Started");
+
+
+  while (!homingDone) {
+    local_heading = readCurrentHeading();
+    Serial.print("Homing Steering motor - In process:  ");
+    Serial.println(local_heading);
+
+    if (abs(local_heading) < local_heading_tolerance) {
+      homingDone = true;
+      stopWheelSteeringMotor();
+      Serial.println("Homing Steering motor - Complete 1");
+      delay(2000);
+    }
+    if (local_heading >= 0) 
+    {
+      runWheelSteeringMotor (homing_speed);   // 0-254 is CountClockwise, -254 to 0 is Clockwise
+      Serial.print("Homing Steering motor - Positive  ");
+    }
+    else 
+    {
+      runWheelSteeringMotor (-homing_speed);   // 0-254 is CountClockwise, -254 to 0 is Clockwise
+      Serial.print("Homing Steering motor - Negative  ");
+    }
+  }
+
+  Serial.println("Homing Steering motor - Complete");
+  return homingDone;
+}
+
+//------------------------------------------------------------------------
+float readCurrentHeading() {
+  sensorValueA0 = returnSensor(A0);
+  sensorValueA1 = returnSensor(A1);
+  return calculateHeading(sensorValueA0, sensorValueA1);
+}
+//------------------------------------------------------------------------
+
+//------------------------------------------------------------------------
 
 //------------------------------------------------------------------------
 
