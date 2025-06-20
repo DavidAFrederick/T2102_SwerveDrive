@@ -134,14 +134,11 @@ void loop() {
 
   if (millis() > nextTime)
   {
-    //    nextTime += 1000;
-    nextTime += 200;
-    //    Serial.print("Count: ");
-    //    Serial.print(loop_counter);
-    //    Serial.print("   Time: ");
-    //    Serial.println(millis());
+    nextTime += 1000;
+        Serial.print("Count: ");
+        Serial.println(loop_counter);
     loop_counter = 0;
-    debugflag = true;
+    debugflag = false;  // Control printing for debugging
   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -466,10 +463,8 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
   // ... IF hd is positive, set motor to turn wheel heading cw
   // ... IF hd is negative, set motor to turn wheel heading ccw
 
-
-
-  float heading_alignment_tolerance = 10;
-  float heading_change_speed = 120;
+  float heading_alignment_tolerance = 8;
+  float heading_change_speed = 150; // 120;
 
   float heading_difference = desired_wheel_heading_value - current_heading;
 
@@ -479,8 +474,14 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
   // Disabled OLED and enabled printing at 9600:  19 Loops per second
   // Disabled OLED and enabled printing at 11500:  239 loops per second
 
-  int speed1 = 120;   //  ERROR Get rid of this
+//  int speed1 = 120;   //  ERROR Get rid of this
   int option = 0;
+
+  if (abs(current_heading) > 160) {
+    runWheelSteeringMotor(0);
+    Serial.println("Reached +/- 170 degree limit");
+  }
+
 
   // Check to see if within the tolerance window
   if ( abs(heading_difference) <= heading_alignment_tolerance ) {
@@ -492,19 +493,14 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
   {   
     if (heading_difference >= 0) {
       //    Serial.print("Need to turn right");
-      heading_change_speed = heading_change_speed;
+      heading_change_speed = -heading_change_speed;
       option = 2;
     }
     else if (heading_difference < 0) {
       //    Serial.print("Need to turn right");
-      heading_change_speed = -heading_change_speed;
+      heading_change_speed = heading_change_speed;
       option = 3;
     }
-//    else {
-//      //    Serial.print("Need to turn Left ");
-//      heading_change_speed = -heading_change_speed;  /// negated
-//      option = 4;
-//    }
   }
 
 
@@ -521,7 +517,6 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
     Serial.print(" case: ");
     Serial.println(option);
   }
-  //  analogWrite(steering_motor_speed_PWM_pin, heading_change_speed);  //  ERROR __ NEED TO CHANGE DIRECTION, CAN"T USE NEGATIVE VALUES
   runWheelSteeringMotor( heading_change_speed);
 
 }
@@ -548,45 +543,28 @@ void runWheelSteeringMotor(float local_motorSpeed) {
   // If input is greater than zero, set motor to forward and run the motor
   // If input is less than zero, set motor to reverse direction, negate the input and run the motor
 
-//local_motorSpeed = 100;  // CCW
-//local_motorSpeed = -100;  // CW
-
-
 if (debugflag) 
   {
     Serial.print("Speed ");
     Serial.println(local_motorSpeed);
   }
-
-
+  
   if (local_motorSpeed >= 0) {
     set_steering_motor_direction("ccw");
     analogWrite(steering_motor_speed_PWM_pin, local_motorSpeed);
-//        if (first_forward){
-//          first_forward = false;
-//          first_reverse  = true;
-//          Serial.print("First forward: ");
-//          Serial.println(local_motorSpeed);
-//        }
   }
   else if (local_motorSpeed < 0) {
     set_steering_motor_direction("cw");
     analogWrite(steering_motor_speed_PWM_pin, -local_motorSpeed);
-//        if (first_forward){
-//          first_forward = true;
-//          first_reverse  = false;
-//          Serial.print("First Reverse: ");
-//          Serial.println(local_motorSpeed);
-//        }
   }
 }
 
 //------------------------------------------------------------------------
 bool driveMotorToHome() { //  Returns true when completer
   bool homingDone = false;
-  float local_heading_tolerance = 10;
+  float local_heading_tolerance = 5;
   float local_heading = readCurrentHeading();
-  float homing_speed = 100;
+  float homing_speed = 200;
   Serial.println("Homing Steering motor - Started");
 
 
