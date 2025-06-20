@@ -135,16 +135,16 @@ void loop() {
   if (millis() > nextTime)
   {
     nextTime += 1000;
-        Serial.print("Count: ");
-        Serial.println(loop_counter);
+    Serial.print("Count: ");
+    Serial.println(loop_counter);
     loop_counter = 0;
-    debugflag = false;  // Control printing for debugging
+    debugflag = true;  // Control printing for debugging
   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   // Wheel Heading sensor
   current_heading = readCurrentHeading();
-  //  displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, current_heading);   // Commented out to speed up
+  if (debugflag)   displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, current_heading);   // Commented out to speed up
 
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
@@ -474,7 +474,7 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
   // Disabled OLED and enabled printing at 9600:  19 Loops per second
   // Disabled OLED and enabled printing at 11500:  239 loops per second
 
-//  int speed1 = 120;   //  ERROR Get rid of this
+  //  int speed1 = 120;   //  ERROR Get rid of this
   int option = 0;
 
   if (abs(current_heading) > 160) {
@@ -490,7 +490,7 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
     heading_change_speed = 0;
   }
   else   //  Heading outside of tolerance window
-  {   
+  {
     if (heading_difference >= 0) {
       //    Serial.print("Need to turn right");
       heading_change_speed = -heading_change_speed;
@@ -505,7 +505,8 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
 
 
 
-  if (debugflag) {
+  if (debugflag  && false)
+  {
     Serial.print("Ct: ");
     Serial.print(current_heading);
     Serial.print(" Dd: ");
@@ -543,12 +544,12 @@ void runWheelSteeringMotor(float local_motorSpeed) {
   // If input is greater than zero, set motor to forward and run the motor
   // If input is less than zero, set motor to reverse direction, negate the input and run the motor
 
-if (debugflag) 
+  if (debugflag  && false)
   {
     Serial.print("Speed ");
     Serial.println(local_motorSpeed);
   }
-  
+
   if (local_motorSpeed >= 0) {
     set_steering_motor_direction("ccw");
     analogWrite(steering_motor_speed_PWM_pin, local_motorSpeed);
