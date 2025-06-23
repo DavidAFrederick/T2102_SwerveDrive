@@ -32,6 +32,11 @@ float desired_wheel_heading_value = 0;
 int loop_counter = 0;
 long nextTime = 0;
 
+// int temp_motor_speed = 60;
+// int temp_motor_speed_increment = +1;
+bool debugflag = false;
+bool homeWheel = false;
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Rotary Encoder Test Code
 int Counter1 = 0, LastCount1 = 0;                  //uneeded just for test
@@ -39,7 +44,12 @@ void RotaryChanged();                              //we need to declare the func
 RotaryEncoder Rotary1(&RotaryChanged, 11, 12, 4);  // Pins  (DT),  (CLK),  (SW)
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
+int lastEncoded = 0;          // Used to track last encoder state
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Arduino Pin Assignments
 // D13   - Not Used
 // 3.3v  - Not Used
@@ -80,34 +90,10 @@ const int wheel_rotation_motor_speed_PWM_pin = 10;   // D10
 const int rotary_encoder_data_pin = 11;              // D11 - (NEEDS INTERUPT SUPPORT) - Not working
 const int rotary_encoder_clock_pin = 12;             // D12 - (NEEDS INTERUPT SUPPORT) - Not working//
 
-//==============================================
-
-volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
-int lastEncoded = 0;          // Used to track last encoder state
-
-int temp_motor_speed = 60;
-int temp_motor_speed_increment = +1;
-bool debugflag = false;
-bool homeWheel = false;
-
-
-
-
-
-
-
-
-
-
-
-
 //=============================================================================
 
 void setup() {
   Serial.begin(9600);
-  // Serial.begin(19200);
-  //  Serial.begin(57600);
-
   initializeDisplay();
   configure_pins();
 
@@ -116,35 +102,28 @@ void setup() {
   Rotary1.setup();
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
-
-
-
-
-
-
-
-
 //=============================================================================
 
 void loop() {
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  loop_counter = loop_counter + 1;
-  debugflag = false;
-
-  if (millis() > nextTime)
-  {
-    nextTime += 1000;
-    Serial.print("Count: ");
+  //  Enable the debug flag once per second (1000) to print status and loops per second count
+  // loop_counter = loop_counter + 1;   // Moved to inside of the loop
+  if (millis() > nextTime) {
+    nextTime += 1000;  // Number of milliseconds between prints to monitor
+    Serial.print("Number of loops per second: ");
     Serial.println(loop_counter);
     loop_counter = 0;
     debugflag = true;  // Control printing for debugging
+  } else {
+    debugflag = false;
+    loop_counter = loop_counter + 1;
   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   // Wheel Heading sensor
   current_heading = readCurrentHeading();
-  if (debugflag)   displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, current_heading);   // Commented out to speed up
+  if (debugflag) displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, current_heading);
 
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
@@ -153,26 +132,25 @@ void loop() {
 
   //  When the joystick button is pressed, drive the wheel direction to zero.
   if (JoystickButtonPressed()) {
-    homeWheel = true;
-    stopWheelSteeringMotor();
-    driveMotorToHome();
-    Serial.println("Homing Complete");
-    delay (2000);
-    homeWheel = false;
-
+    homeWheel =  home_wheels_when_joystick_pressed();
   }
 
-  // Do not steer the wheel once the home joystick button is pressed
+  // if (JoystickButtonPressed()) {      ///  REMOVE AFTER CHECKOUT
+  //   homeWheel = true;
+  //   stopWheelSteeringMotor();
+  //   driveMotorToHome();
+  //   Serial.println("Homing Complete");
+  //   delay(2000);
+  //   homeWheel = false;
+  // }
+
+  // Do not steer the wheel based on joystick once the home joystick button is pressed
   if (homeWheel == false) {
     // Used for wheel steering
-    x_control_value = get_joystick_x_control_value();  //   Returned value range:  -254, 255
-    // When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90
-    // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
-    // When the joystick to centered (510), the wheels will turn to center
+    x_control_value = get_joystick_x_control_value();
 
     desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
     set_right_front_wheel_heading(desired_wheel_heading_value, current_heading);
-    //  analogWrite(steering_motor_speed_PWM_pin, get_joystick_x_control_value());
   }
 
 
@@ -202,8 +180,7 @@ void loop() {
 }
 //========================================================================
 
-//------------------------------------------------------------------------
-
+// Initialize the OLED Display
 void initializeDisplay() {
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);  // Initialize the display
   display.clearDisplay();                          // Clear the display
@@ -214,18 +191,22 @@ void initializeDisplay() {
 }
 
 //------------------------------------------------------------------------
+
+// Performs an analog read of the specified pin
 float returnSensor(int sensorPin) {
   return analogRead(sensorPin);
 }
-
 //------------------------------------------------------------------------
+
+/*
+  Displays heading and raw sensors values (disabled) on the OLED.  SLOW
+*/
 void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float heading) {
 
   String sensorValuesString = "";
   String headingString = "";
 
-  //  headingString = "Heading:  " + String(heading)
-  headingString = "Heading:  " + String(heading) + " " + String(temp_motor_speed);
+  headingString = "Heading:  " + String(heading);
   display.setCursor(0, 0);       // Set cursor position
   display.print(headingString);  // Print text
 
@@ -242,10 +223,13 @@ void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float h
 
 //------------------------------------------------------------------------
 
+/*
+  Calculate the heading of the wheel based on two rotational position sensors.  
+  Need two sensors to cover the 30 degree blank segment 
+*/
 float calculateHeading(float sensorValueA0, float sensorValueA1) {
 
   // Using mid range of Sensor on A0 for wheel heading between + 90 and -90 degrees
-
   if ((sensorValueA0 > lowThreshold) && (sensorValueA0 < highThreshold)) {
     sensorValueA0Component = lineSlope * sensorValueA0 - lineIntercept;
     sensorValueA1Component = 0;
@@ -264,6 +248,8 @@ float calculateHeading(float sensorValueA0, float sensorValueA1) {
 }
 
 //------------------------------------------------------------------------
+
+// Assigns the modes of each pin on the arduino
 void configure_pins() {
 
   // Signals to Motor Controller
@@ -290,10 +276,15 @@ void configure_pins() {
 
   // Joystick
   pinMode(joystickSwitch_pin, INPUT_PULLUP);
-
 }
 
 //------------------------------------------------------------------------
+
+/*
+  This function is an interrupt call to handle the motor encoder.  
+  Increments or decrements a counter
+*/
+
 void updateEncoder() {
   int MSB = digitalRead(heading_motor_encoder_A_pin);
   int LSB = digitalRead(heading_motor_encoder_B_pin);
@@ -311,18 +302,13 @@ void updateEncoder() {
 
 //------------------------------------------------------------------------
 
+// Read the joystick X position (lateral) and return 0 (full left) to 1023 (Full Right)
 float get_joystick_x_control_value() {
   analogControl = analogRead(A6);
   return analogControl;
-  //  int motor_speed = map(analogControl, 0, 1023, -254, 255);
-  //  Serial.print("GET X Axis:   Analog In: ");
-  //  Serial.print(analogControl);
-  //  Serial.print("  Mapped:");
-  //  Serial.print(motor_speed);
-  //  Serial.print("                   ");
-  //  return motor_speed;
 }
-
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// Read the joystick y position (forward/backward) and return 1023 (full forward) to 0 (Full reverse)
 float get_joystick_y_control_value() {  // Forward speed
   motor_speed = analogRead(A7);         // 0-1023
   return motor_speed;
@@ -348,6 +334,9 @@ void RotaryChanged() {
     Counter1--;
 }
 //------------------------------------------------------------------------
+
+// Controls the direction of rotation of the wheel drive motor
+
 void set_drive_wheel_rotation_direction(String direction) {
   if (direction == "forward") {
     digitalWrite(wheel_rotation_motor_direction_A_pin, HIGH);
@@ -361,6 +350,9 @@ void set_drive_wheel_rotation_direction(String direction) {
 }
 
 //------------------------------------------------------------------------
+
+// Controls the direction of rotation of the wheel heading drive motor
+
 void set_steering_motor_direction(String direction) {
   if (direction == "cw") {
 
@@ -376,6 +368,13 @@ void set_steering_motor_direction(String direction) {
 }
 
 //------------------------------------------------------------------------
+
+/*
+  Calculate motor speed and direction from the input joystick position value ranging 
+  from 1023 (full forward) to 0 (full reverse). The motor output is of range 0 to 254.
+  Must set the motor direction separately.
+*/
+
 float calculate_motor_speed_value(int y_control_value) {
 
   // Forward movement >> input range 510 to 103 >> output range 0 254
@@ -395,61 +394,57 @@ float calculate_motor_speed_value(int y_control_value) {
     //    Serial.print (" Deadzone> ");
   }
 
-  //  Serial.print ("Y Axis:   Analog In: ");
-  //  Serial.print (y_control_value);
-  //  Serial.print ("  Mapped:");
-  //  Serial.println (motor_speed);
-
+  if (debugflag && false) {
+    //  Serial.print ("Y Axis:   Analog In: ");
+    //  Serial.print (y_control_value);
+    //  Serial.print ("  Mapped:");
+    //  Serial.println (motor_speed);
+  }
   return motor_speed;
 }
 //------------------------------------------------------------------------
+// Need to expand this code to support forward and reverse operations.  Copy from wheel heading speed control
 void set_right_front_wheel_speed(float motor_speed) {
   analogWrite(wheel_rotation_motor_speed_PWM_pin, motor_speed);
 }
 //------------------------------------------------------------------------
 
+/*  
+    When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90.  
+    When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right.  
+    When the joystick to centered (510), the wheels will turn to center.
+    */
 float convert_joystick_to_heading_value(int joystick_x_value) {
-
-  // When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90
-  // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
-  // When the joystick to centered (510), the wheels will turn to center
-
-  //  float joystick_y_middle_value = 510;
-  //float joystick_x_middle_value = 510;
-  //float joystick_deadzone = 5;
 
   float heading_value = 0;
 
   // When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90
-  //  if (joystick_x_value > (joystick_x_middle_value + joystick_deadzone)) {
-  if (joystick_x_value > 515) {
-    set_steering_motor_direction("ccw");    ////  ERROR - THESE DON'T BELONG HERE, WE ARE NOT MOVING THE MOTOR
+  if (joystick_x_value > (joystick_x_middle_value + joystick_deadzone)) {
+    // if (joystick_x_value > 515) {
+    // set_steering_motor_direction("ccw");  ////  ERROR - THESE DON'T BELONG HERE, WE ARE NOT MOVING THE MOTOR
     heading_value = map(joystick_x_value, joystick_x_middle_value, 1023, 0, -90);
     //    Serial.print(" CCW > ");
 
     // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
-  } else if (joystick_x_value < 505) {
-    //  } else if (joystick_x_value < (joystick_x_middle_value - joystick_deadzone)) {
-    set_steering_motor_direction("cw");  ////  ERROR - THESE DON'T BELONG HERE, WE ARE NOT MOVING THE MOTOR
+    // } else if (joystick_x_value < 505) {
+  } else if (joystick_x_value < (joystick_x_middle_value - joystick_deadzone)) {
+    // set_steering_motor_direction("cw");  ////  ERROR - THESE DON'T BELONG HERE, WE ARE NOT MOVING THE MOTOR
     heading_value = map(joystick_x_value, joystick_x_middle_value, 0, 0, 90);
     //    Serial.print(" CW > ");
 
     // When the joystick to centered (510), the wheels will turn to center
-    //  } else if ((joystick_x_value > (joystick_x_middle_value - joystick_deadzone)) && (joystick_x_value < (joystick_x_middle_value + joystick_deadzone))) {
-  } else if ((joystick_x_value > 505) && (joystick_x_value < 515)) {
+  } else if ((joystick_x_value > (joystick_x_middle_value - joystick_deadzone)) && (joystick_x_value < (joystick_x_middle_value + joystick_deadzone))) {
+    // } else if ((joystick_x_value > 505) && (joystick_x_value < 515)) {
     heading_value = 0;
     //    Serial.print(" Deadzone > ");
   }
-
-  //  Serial.print("X Axis:::   Analog In: ");
-  //  Serial.print(joystick_x_value);
-  //  Serial.print("  Mapped heading: ");
-  //  Serial.println(heading_value);
 
   return heading_value;
 }
 
 //------------------------------------------------------------------------
+
+// Drive the wheel to the desired value based on the current position
 
 void set_right_front_wheel_heading(float desired_wheel_heading_value, float current_heading) {
   // Rotate left from center is negative heading
@@ -464,17 +459,10 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
   // ... IF hd is negative, set motor to turn wheel heading ccw
 
   float heading_alignment_tolerance = 8;
-  float heading_change_speed = 150; // 120;
+  float heading_change_speed = 150;  // 120;
 
   float heading_difference = desired_wheel_heading_value - current_heading;
 
-
-  // No printing:  About 1700 loops per second
-  // Display on OLED: about 6 loops per second
-  // Disabled OLED and enabled printing at 9600:  19 Loops per second
-  // Disabled OLED and enabled printing at 11500:  239 loops per second
-
-  //  int speed1 = 120;   //  ERROR Get rid of this
   int option = 0;
 
   if (abs(current_heading) > 160) {
@@ -482,31 +470,25 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
     Serial.println("Reached +/- 170 degree limit");
   }
 
-
   // Check to see if within the tolerance window
-  if ( abs(heading_difference) <= heading_alignment_tolerance ) {
+  if (abs(heading_difference) <= heading_alignment_tolerance) {
     //    Serial.print("heading is good   ");
     option = 1;
     heading_change_speed = 0;
-  }
-  else   //  Heading outside of tolerance window
+  } else  //  Heading outside of tolerance window
   {
     if (heading_difference >= 0) {
       //    Serial.print("Need to turn right");
       heading_change_speed = -heading_change_speed;
       option = 2;
-    }
-    else if (heading_difference < 0) {
+    } else if (heading_difference < 0) {
       //    Serial.print("Need to turn right");
       heading_change_speed = heading_change_speed;
       option = 3;
     }
   }
 
-
-
-  if (debugflag  && false)
-  {
+  if (debugflag && false) {
     Serial.print("Ct: ");
     Serial.print(current_heading);
     Serial.print(" Dd: ");
@@ -518,34 +500,35 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
     Serial.print(" case: ");
     Serial.println(option);
   }
-  runWheelSteeringMotor( heading_change_speed);
-
+  runWheelSteeringMotor(heading_change_speed);
 }
 
-
 //------------------------------------------------------------------------
+
+  //  Released = 0 and pressed = 1
+
 bool JoystickButtonPressed() {
-  //  Released = 1 and pressed = 0
   int pinInputValue = !digitalRead(joystickSwitch_pin);
   return pinInputValue;
 }
 
 //------------------------------------------------------------------------
+
+// Stop the motor
+
 void stopWheelSteeringMotor() {
   analogWrite(steering_motor_speed_PWM_pin, 0);
-  //    Serial.println("Stopping Steering motor");
 }
 //------------------------------------------------------------------------
+
+/*
+  Input range is -254 to + 254
+  If input is greater than zero, set motor to forward and run the motor
+  If input is less than zero, set motor to reverse direction, negate the input and run the motor
+*/
 void runWheelSteeringMotor(float local_motorSpeed) {
-  bool first_forward = true;
-  bool first_reverse  = true;
 
-  // Input range is -254 to + 254
-  // If input is greater than zero, set motor to forward and run the motor
-  // If input is less than zero, set motor to reverse direction, negate the input and run the motor
-
-  if (debugflag  && false)
-  {
+  if (debugflag && false) {
     Serial.print("Speed ");
     Serial.println(local_motorSpeed);
   }
@@ -553,21 +536,22 @@ void runWheelSteeringMotor(float local_motorSpeed) {
   if (local_motorSpeed >= 0) {
     set_steering_motor_direction("ccw");
     analogWrite(steering_motor_speed_PWM_pin, local_motorSpeed);
-  }
-  else if (local_motorSpeed < 0) {
+  } else if (local_motorSpeed < 0) {
     set_steering_motor_direction("cw");
     analogWrite(steering_motor_speed_PWM_pin, -local_motorSpeed);
   }
 }
 
 //------------------------------------------------------------------------
-bool driveMotorToHome() { //  Returns true when completer
+
+// Rotates the wheel to zero degree position.  Loops until complete.
+
+bool driveMotorToHome() {  //  Returns true when completed
   bool homingDone = false;
   float local_heading_tolerance = 5;
   float local_heading = readCurrentHeading();
   float homing_speed = 200;
   Serial.println("Homing Steering motor - Started");
-
 
   while (!homingDone) {
     local_heading = readCurrentHeading();
@@ -580,14 +564,11 @@ bool driveMotorToHome() { //  Returns true when completer
       Serial.println("Homing Steering motor - Complete 1");
       delay(2000);
     }
-    if (local_heading >= 0)
-    {
-      runWheelSteeringMotor (homing_speed);   // 0-254 is CountClockwise, -254 to 0 is Clockwise
+    if (local_heading >= 0) {
+      runWheelSteeringMotor(homing_speed);  // 0-254 is CountClockwise, -254 to 0 is Clockwise
       Serial.print("Homing Steering motor - Positive  ");
-    }
-    else
-    {
-      runWheelSteeringMotor (-homing_speed);   // 0-254 is CountClockwise, -254 to 0 is Clockwise
+    } else {
+      runWheelSteeringMotor(-homing_speed);  // 0-254 is CountClockwise, -254 to 0 is Clockwise
       Serial.print("Homing Steering motor - Negative  ");
     }
   }
@@ -597,10 +578,23 @@ bool driveMotorToHome() { //  Returns true when completer
 }
 
 //------------------------------------------------------------------------
+
+// Reads the raw values for the two rotational position sensors
 float readCurrentHeading() {
   sensorValueA0 = returnSensor(A0);
   sensorValueA1 = returnSensor(A1);
   return calculateHeading(sensorValueA0, sensorValueA1);
+}
+//------------------------------------------------------------------------
+
+bool home_wheels_when_joystick_pressed() {
+  homeWheel = true;
+  stopWheelSteeringMotor();
+  driveMotorToHome();
+  Serial.println("Homing Complete");
+  delay(2000);
+  homeWheel = false;
+  return homeWheel;
 }
 //------------------------------------------------------------------------
 
@@ -614,6 +608,8 @@ float readCurrentHeading() {
 
 //------------------------------------------------------------------------
 
-//------------------------------------------------------------------------
-
+// No printing:  About 1700 loops per second
+// Display on OLED: about 6 loops per second
+// Disabled OLED and enabled printing at 9600:  19 Loops per second
+// Disabled OLED and enabled printing
 //------------------------------------------------------------------------

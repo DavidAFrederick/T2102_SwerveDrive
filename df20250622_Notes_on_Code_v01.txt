@@ -1,0 +1,47 @@
+
+Review code to remove numbers
+
+
+Review code looking for blocks of code that can be placed into a small function
+Review each function to see if it can be uses for all 4 drive wheels
+
+
+ToDo:
+Update wheel rotation motor speed control to access -254 (Reverse) to 254 (forward)
+
+Add descriptions to  each function
+
+Update variables with names for specific wheels
+
+Update function notes on joystick position
+
+Get rotary control working (Not sure how to use it to drive robot)
+
+Add code using motor encoder to drive specific distance.
+
+===========================
+
+High Level tasks:
+1) Determine what functions to add to code for single wheel robot
+2) 
+
+
+
+Capabilities of Single Wheel robot.
+1) Joystick - Lateral movement changes the heading of the wheel
+2) Joystick - longitudinal movement drives the robot forward and backward
+3) Pressing joystick button homes wheel.
+
+
+
+Capabilities on 
+
+
+
+
+
+
+
+
+
+
