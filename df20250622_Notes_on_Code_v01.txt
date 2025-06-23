@@ -34,13 +34,27 @@ Capabilities of Single Wheel robot.
 
 
 
-Capabilities on 
+Capabilities on 4 wheel swerve:
+
+1) Drive in the direction of the wheels. 
+   - All wheels the same heading. 
+   - Wheels spin same speed.
+   - Robot heading stays fixed while robot drives
+
+2) Rotate in a single spot. 
+    - Wheels turn to 45 degree position (Opposites: +45 or -45) 
+    - Wheels spin in opposite directions.
+    - Robot heading changes but position does not change.
+
+3) Turn while moving
+    - Complex
 
 
 
 
 
-
+Resources:
+https://compendium.readthedocs.io/en/latest/tasks/drivetrains/swerve.html#:~:text=Swerve%20Drive%20is%20a%20type,above%20in%20the%20rightmost%20image.
 
 
 
