@@ -224,8 +224,8 @@ void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float h
 //------------------------------------------------------------------------
 
 /*
-  Calculate the heading of the wheel based on two rotational position sensors.  
-  Need two sensors to cover the 30 degree blank segment 
+  Calculate the heading of the wheel based on two rotational position sensors.
+  Need two sensors to cover the 30 degree blank segment
 */
 float calculateHeading(float sensorValueA0, float sensorValueA1) {
 
@@ -281,7 +281,7 @@ void configure_pins() {
 //------------------------------------------------------------------------
 
 /*
-  This function is an interrupt call to handle the motor encoder.  
+  This function is an interrupt call to handle the motor encoder.
   Increments or decrements a counter
 */
 
@@ -370,7 +370,7 @@ void set_steering_motor_direction(String direction) {
 //------------------------------------------------------------------------
 
 /*
-  Calculate motor speed and direction from the input joystick position value ranging 
+  Calculate motor speed and direction from the input joystick position value ranging
   from 1023 (full forward) to 0 (full reverse). The motor output is of range 0 to 254.
   Must set the motor direction separately.
 */
@@ -409,11 +409,11 @@ void set_right_front_wheel_speed(float motor_speed) {
 }
 //------------------------------------------------------------------------
 
-/*  
-    When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90.  
-    When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right.  
+/*
+    When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90.
+    When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right.
     When the joystick to centered (510), the wheels will turn to center.
-    */
+*/
 float convert_joystick_to_heading_value(int joystick_x_value) {
 
   float heading_value = 0;
@@ -505,7 +505,7 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
 
 //------------------------------------------------------------------------
 
-  //  Released = 0 and pressed = 1
+//  Released = 0 and pressed = 1
 
 bool JoystickButtonPressed() {
   int pinInputValue = !digitalRead(joystickSwitch_pin);
@@ -550,26 +550,31 @@ bool driveMotorToHome() {  //  Returns true when completed
   bool homingDone = false;
   float local_heading_tolerance = 5;
   float local_heading = readCurrentHeading();
-  float homing_speed = 200;
+  float homing_speed = 120;
   Serial.println("Homing Steering motor - Started");
 
   while (!homingDone) {
     local_heading = readCurrentHeading();
-    Serial.print("Homing Steering motor - In process:  ");
-    Serial.println(local_heading);
+//    Serial.print("Homing Steering motor - In process:  ");
+//    Serial.println(local_heading);
 
     if (abs(local_heading) < local_heading_tolerance) {
       homingDone = true;
       stopWheelSteeringMotor();
-      Serial.println("Homing Steering motor - Complete 1");
-      delay(2000);
+
+      Serial.print("Homing Steering motor - Complete 1:  Current Heading: ");
+      local_heading = readCurrentHeading();
+      Serial.println(local_heading);
+      Serial.println ("Holding for 1 second");
+      delay(1000);
+      Serial.println ("Release hold");
     }
-    if (local_heading >= 0) {
+    else if (local_heading >= 0) {
       runWheelSteeringMotor(homing_speed);  // 0-254 is CountClockwise, -254 to 0 is Clockwise
-      Serial.print("Homing Steering motor - Positive  ");
+//      Serial.print("Homing Steering motor - Positive  ");
     } else {
       runWheelSteeringMotor(-homing_speed);  // 0-254 is CountClockwise, -254 to 0 is Clockwise
-      Serial.print("Homing Steering motor - Negative  ");
+//      Serial.print("Homing Steering motor - Negative  ");
     }
   }
 
