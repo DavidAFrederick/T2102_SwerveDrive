@@ -1,4 +1,4 @@
-//  June 20, 2025 10:22 AM
+//  June 28, 2025  11:11 AM
 //
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
@@ -7,36 +7,128 @@
 
 Adafruit_SSD1306 display(OLED_ADDR);
 
-int sensorValueA0 = 0;  // variable to store the value coming from the sensor
-int sensorValueA1 = 0;  // variable to store the value coming from the sensor
+int FL_sensorValueA0 = 0;  
+int FL_sensorValueA1 = 0;  
+int FR_sensorValueA0 = 0;  
+int FR_sensorValueA1 = 0;  
+int BL_sensorValueA0 = 0;  
+int BL_sensorValueA1 = 0;  
+int BR_sensorValueA0 = 0;  
+int BR_sensorValueA1 = 0;  
+
+float FL_sensorValueA0Component = 0;
+float FL_sensorValueA1Component = 0;
+float FR_sensorValueA0Component = 0;
+float FR_sensorValueA1Component = 0;
+float BL_sensorValueA0Component = 0;
+float BL_sensorValueA1Component = 0;
+float BR_sensorValueA0Component = 0;
+float BR_sensorValueA1Component = 0;
+
 
 int lowThreshold = 200;
 int highThreshold = 760;
 float lineSlope = 0.342205323;
 float lineIntercept = 169;
-float sensorValueA0Component = 0;
-float sensorValueA1Component = 0;
-float current_heading = 0;
+float FL_current_heading = 0;
 int analogControl = 0;
 int joystick_x_value = 0;
 int joystick_y_value = 0;
-
 float y_control_value = 0;
 float x_control_value = 0;
 float joystick_y_middle_value = 510;
 float joystick_x_middle_value = 510;
 float joystick_deadzone = 5;
-float motor_speed = 0;
-float desired_wheel_heading_value = 0;
+
+
+float FL_motor_speed = 0;
+float FR_motor_speed = 0;
+float BL_motor_speed = 0;
+float BR_motor_speed = 0;
+float FL_desired_wheel_heading_value = 0;
+float FR_desired_wheel_heading_value = 0;
+float BL_desired_wheel_heading_value = 0;
+float BR_desired_wheel_heading_value = 0;
 
 int loop_counter = 0;
 long nextTime = 0;
 
-// int temp_motor_speed = 60;
-// int temp_motor_speed_increment = +1;
+// int temp_FL_motor_speed = 60;
+// int temp_FL_motor_speed_increment = +1;
 bool debugflag = false;
 bool homeWheel = false;
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+/*
+
+DIO 54 
+PWM 15 -  15 PWM pins: 2 through 13, and 44, 45, and 46.
+Interrupts 6 - interrupt pins: 2, 3, 18, 19, 20, and 21. 
+16 analog input pins
+
+Needed:
+DIO: 20
+Interupts 12 - 2 for each wheel encoder, 4 for rotary controls
+PWM 8
+Analog 8
+
+>> MEGA PIN ASSIGNMENTS <<
+Analog
+A0 = Heading Sensor A = Module White
+A1 = Heading Sensor B = Module White
+A2 = Heading Sensor A = Module Blue
+A3 = Heading Sensor B = Module Blue
+A4 = Heading Sensor A = Module Black
+A5 = Heading Sensor B = Module Black
+A6 = Heading Sensor A = Module Silver
+A7 = Heading Sensor B = Module Silver
+
+Digital
+D2  - Not used - Interupt
+D3  - Not used - Interupt
+
+D5  - PWM - Motor Controller - EN-B - Silver - Drive
+D6  - PWM - Motor Controller - EN-A - Blue  - Heading
+D7  - PWM - Motor Controller - EN-B - Blue  - Drive
+
+D8  - PWM - Motor Controller - EN-B - White - Drive
+D9  - DIO - Motor Controller - IN-4 - White - Drive
+D10 - DIO - Motor Controller - IN-3 - White - Drive
+D11 - DIO - Motor Controller - IN-2 - White - Heading
+D12 - DIO - Motor Controller - IN-1 - White - Heading
+D13 - PWM - Motor Controller - EN-A - White - Heading
+
+D20 - SDA - OLED
+D21 - SCL - OLED 
+
+D23 - DIO - Motor Controller - IN-1 - Blue - Heading
+D25 - DIO - Motor Controller - IN-2 - Blue - Heading
+D27 - DIO - Motor Controller - IN-3 - Blue - Drive
+D29 - DIO - Motor Controller - IN-4 - Blue - Drive
+
+D33 - DIO - Motor Controller - IN-1 - Black - Heading
+D35 - DIO - Motor Controller - IN-2 - Black - Heading
+D37 - DIO - Motor Controller - IN-3 - Black - Drive
+D38 - DIO - Motor Controller - IN-4 - Black - Drive
+
+D44 - PWM - Motor Controller - EN-A - Black - Heading
+D46 - PWM - Motor Controller - EN-B - Black - Drive
+
+D43 - DIO - Motor Controller - IN-1 - Silver - Heading
+D45 - PWM - Motor Controller - EN-A - Silver - Heading
+D47 - DIO - Motor Controller - IN-2 - Silver - Heading
+D49 - DIO - Motor Controller - IN-3 - Silver - Drive
+D51 - DIO - Motor Controller - IN-4 - Silver - Drive
+
+
+
+
+
+
+
+
+
+*/
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Rotary Encoder Test Code
 int Counter1 = 0, LastCount1 = 0;                  //uneeded just for test
@@ -81,12 +173,12 @@ const int heading_motor_encoder_A_pin = 2;  // D2 (supports interupts)
 const int heading_motor_encoder_B_pin = 3;  // D3 (supports interupts)
 
 const int rotary_encoder_switch_pin = 4;             // D4
-const int steering_motor_speed_PWM_pin = 5;          // D5
+const int steering_FL_motor_speed_PWM_pin = 5;          // D5
 const int steering_motor_direction_A_pin = 6;        // D6
 const int steering_motor_direction_B_pin = 7;        // D7
 const int wheel_rotation_motor_direction_A_pin = 8;  // D8
 const int wheel_rotation_motor_direction_B_pin = 9;  // D9
-const int wheel_rotation_motor_speed_PWM_pin = 10;   // D10
+const int wheel_rotation_FL_motor_speed_PWM_pin = 10;   // D10
 const int rotary_encoder_data_pin = 11;              // D11 - (NEEDS INTERUPT SUPPORT) - Not working
 const int rotary_encoder_clock_pin = 12;             // D12 - (NEEDS INTERUPT SUPPORT) - Not working//
 
@@ -120,37 +212,35 @@ void loop() {
     loop_counter = loop_counter + 1;
   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  //
+  //     [ FL ]      [ FR ]
+  //
+  //             top
+  //     
+  //     [ BL ]      [ BR ]
+  //
 
   // Wheel Heading sensor
-  current_heading = readCurrentHeading();
-  if (debugflag) displaySensorValuesAndHeading(sensorValueA0, sensorValueA1, current_heading);
+  FL_current_heading = readCurrentHeading(A0,A1);    // Update to pass parameters
+  if (debugflag) displaySensorValuesAndHeading(FL_sensorValueA0, FL_sensorValueA1, FL_current_heading);
 
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
-  motor_speed = calculate_motor_speed_value(y_control_value);
-  set_right_front_wheel_speed(motor_speed);
+  FL_motor_speed = calculate_FL_motor_speed_value(y_control_value);
+  set_right_front_wheel_speed(FL_motor_speed);
 
   //  When the joystick button is pressed, drive the wheel direction to zero.
   if (JoystickButtonPressed()) {
     homeWheel =  home_wheels_when_joystick_pressed();
   }
 
-  // if (JoystickButtonPressed()) {      ///  REMOVE AFTER CHECKOUT
-  //   homeWheel = true;
-  //   stopWheelSteeringMotor();
-  //   driveMotorToHome();
-  //   Serial.println("Homing Complete");
-  //   delay(2000);
-  //   homeWheel = false;
-  // }
-
   // Do not steer the wheel based on joystick once the home joystick button is pressed
   if (homeWheel == false) {
     // Used for wheel steering
     x_control_value = get_joystick_x_control_value();
 
-    desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
-    set_right_front_wheel_heading(desired_wheel_heading_value, current_heading);
+    FL_desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
+    set_right_front_wheel_heading(FL_desired_wheel_heading_value, FL_current_heading);
   }
 
 
@@ -201,7 +291,7 @@ float returnSensor(int sensorPin) {
 /*
   Displays heading and raw sensors values (disabled) on the OLED.  SLOW
 */
-void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float heading) {
+void displaySensorValuesAndHeading(int FL_sensorValueA0, int FL_sensorValueA1, float heading) {
 
   String sensorValuesString = "";
   String headingString = "";
@@ -211,7 +301,7 @@ void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float h
   display.print(headingString);  // Print text
 
   //  Uncomment to see individual sensors
-  //  sensorValuesString = "Sen:" + String(sensorValueA0) + "  " + String(sensorValueA1);
+  //  sensorValuesString = "Sen:" + String(FL_sensorValueA0) + "  " + String(FL_sensorValueA1);
   //  display.setCursor(0, 17); // Set cursor position
   //  display.print(sensorValuesString); // Print text
 
@@ -228,6 +318,8 @@ void displaySensorValuesAndHeading(int sensorValueA0, int sensorValueA1, float h
   Need two sensors to cover the 30 degree blank segment
 */
 float calculateHeading(float sensorValueA0, float sensorValueA1) {
+  float sensorValueA0Component = 0;
+  float sensorValueA1Component = 0;
 
   // Using mid range of Sensor on A0 for wheel heading between + 90 and -90 degrees
   if ((sensorValueA0 > lowThreshold) && (sensorValueA0 < highThreshold)) {
@@ -253,20 +345,20 @@ float calculateHeading(float sensorValueA0, float sensorValueA1) {
 void configure_pins() {
 
   // Signals to Motor Controller
-  pinMode(steering_motor_speed_PWM_pin, OUTPUT);
+  pinMode(steering_FL_motor_speed_PWM_pin, OUTPUT);
   pinMode(steering_motor_direction_A_pin, OUTPUT);
   pinMode(steering_motor_direction_B_pin, OUTPUT);
   pinMode(wheel_rotation_motor_direction_A_pin, OUTPUT);
   pinMode(wheel_rotation_motor_direction_B_pin, OUTPUT);
-  pinMode(wheel_rotation_motor_speed_PWM_pin, OUTPUT);
+  pinMode(wheel_rotation_FL_motor_speed_PWM_pin, OUTPUT);
 
   digitalWrite(steering_motor_direction_A_pin, HIGH);
   digitalWrite(steering_motor_direction_B_pin, LOW);
   digitalWrite(wheel_rotation_motor_direction_A_pin, HIGH);
   digitalWrite(wheel_rotation_motor_direction_B_pin, LOW);
 
-  //  pinMode(steering_motor_speed_PWM_pin, OUTPUT);  // Why duplicated
-  //  pinMode(wheel_rotation_motor_speed_PWM_pin, OUTPUT);
+  //  pinMode(steering_FL_motor_speed_PWM_pin, OUTPUT);  // Why duplicated
+  //  pinMode(wheel_rotation_FL_motor_speed_PWM_pin, OUTPUT);
 
   // Signals to Wheel Rotation Drive Motor Encoder
   pinMode(heading_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
@@ -310,18 +402,18 @@ float get_joystick_x_control_value() {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Read the joystick y position (forward/backward) and return 1023 (full forward) to 0 (Full reverse)
 float get_joystick_y_control_value() {  // Forward speed
-  motor_speed = analogRead(A7);         // 0-1023
-  return motor_speed;
+  FL_motor_speed = analogRead(A7);         // 0-1023
+  return FL_motor_speed;
 }
 
 //float get_joystick_y_control_value() {    // Forward speed
 //  analogControl  = analogRead(A7);        // 0-1023
-//  int  motor_speed = map ( analogControl, 0, 1023, -254, 254);
+//  int  FL_motor_speed = map ( analogControl, 0, 1023, -254, 254);
 //  Serial.print ("Y Axis:   Analog In: ");
 //  Serial.print (analogControl);
 //  Serial.print ("  Mapped:");
-//  Serial.println (motor_speed);
-//  return motor_speed;
+//  Serial.println (FL_motor_speed);
+//  return FL_motor_speed;
 //}
 
 //------------------------------------------------------------------------
@@ -375,22 +467,23 @@ void set_steering_motor_direction(String direction) {
   Must set the motor direction separately.
 */
 
-float calculate_motor_speed_value(int y_control_value) {
+float calculate_FL_motor_speed_value(int y_control_value) {
 
-  // Forward movement >> input range 510 to 103 >> output range 0 254
+  // Forward movement >> input range 510 to 1023 >> output range 0 254
   if (y_control_value > (joystick_y_middle_value + joystick_deadzone)) {
     set_drive_wheel_rotation_direction("forward");
-    motor_speed = map(y_control_value, joystick_y_middle_value, 1023, 0, 254);
+    FL_motor_speed = map(y_control_value, joystick_y_middle_value, 1023, 0, 254);
     //    Serial.print (" Forward> ");
 
     // Reverse movement >> input range 0 to 510 >> output range 254 to 0
   } else if (y_control_value < (joystick_y_middle_value - joystick_deadzone)) {
     set_drive_wheel_rotation_direction("reverse");
-    motor_speed = map(y_control_value, 0, joystick_y_middle_value, 254, 0);
+    FL_motor_speed = map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // ERROR???
+    // FL_motor_speed = map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // Updated
     //    Serial.print (" Reverse> ");
 
   } else if ((y_control_value > (joystick_y_middle_value - joystick_deadzone)) && (y_control_value < (joystick_y_middle_value + joystick_deadzone))) {
-    motor_speed = 0;
+    FL_motor_speed = 0;
     //    Serial.print (" Deadzone> ");
   }
 
@@ -398,14 +491,14 @@ float calculate_motor_speed_value(int y_control_value) {
     //  Serial.print ("Y Axis:   Analog In: ");
     //  Serial.print (y_control_value);
     //  Serial.print ("  Mapped:");
-    //  Serial.println (motor_speed);
+    //  Serial.println (FL_motor_speed);
   }
-  return motor_speed;
+  return FL_motor_speed;
 }
 //------------------------------------------------------------------------
 // Need to expand this code to support forward and reverse operations.  Copy from wheel heading speed control
-void set_right_front_wheel_speed(float motor_speed) {
-  analogWrite(wheel_rotation_motor_speed_PWM_pin, motor_speed);
+void set_right_front_wheel_speed(float FL_motor_speed) {
+  analogWrite(wheel_rotation_FL_motor_speed_PWM_pin, FL_motor_speed);
 }
 //------------------------------------------------------------------------
 
@@ -446,7 +539,7 @@ float convert_joystick_to_heading_value(int joystick_x_value) {
 
 // Drive the wheel to the desired value based on the current position
 
-void set_right_front_wheel_heading(float desired_wheel_heading_value, float current_heading) {
+void set_right_front_wheel_heading(float desired_wheel_heading_value, float FL_current_heading) {
   // Rotate left from center is negative heading
   // Rotate right from center is positive heading
 
@@ -461,11 +554,11 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
   float heading_alignment_tolerance = 8;
   float heading_change_speed = 150;  // 120;
 
-  float heading_difference = desired_wheel_heading_value - current_heading;
+  float heading_difference = desired_wheel_heading_value - FL_current_heading;
 
   int option = 0;
 
-  if (abs(current_heading) > 160) {
+  if (abs(FL_current_heading) > 160) {
     runWheelSteeringMotor(0);
     Serial.println("Reached +/- 170 degree limit");
   }
@@ -490,7 +583,7 @@ void set_right_front_wheel_heading(float desired_wheel_heading_value, float curr
 
   if (debugflag && false) {
     Serial.print("Ct: ");
-    Serial.print(current_heading);
+    Serial.print(FL_current_heading);
     Serial.print(" Dd: ");
     Serial.print(desired_wheel_heading_value);
     Serial.print(" diff: ");
@@ -517,7 +610,7 @@ bool JoystickButtonPressed() {
 // Stop the motor
 
 void stopWheelSteeringMotor() {
-  analogWrite(steering_motor_speed_PWM_pin, 0);
+  analogWrite(steering_FL_motor_speed_PWM_pin, 0);
 }
 //------------------------------------------------------------------------
 
@@ -535,10 +628,10 @@ void runWheelSteeringMotor(float local_motorSpeed) {
 
   if (local_motorSpeed >= 0) {
     set_steering_motor_direction("ccw");
-    analogWrite(steering_motor_speed_PWM_pin, local_motorSpeed);
+    analogWrite(steering_FL_motor_speed_PWM_pin, local_motorSpeed);
   } else if (local_motorSpeed < 0) {
     set_steering_motor_direction("cw");
-    analogWrite(steering_motor_speed_PWM_pin, -local_motorSpeed);
+    analogWrite(steering_FL_motor_speed_PWM_pin, -local_motorSpeed);
   }
 }
 
@@ -549,12 +642,12 @@ void runWheelSteeringMotor(float local_motorSpeed) {
 bool driveMotorToHome() {  //  Returns true when completed
   bool homingDone = false;
   float local_heading_tolerance = 5;
-  float local_heading = readCurrentHeading();
+  float local_heading = readCurrentHeading(A0,A1);
   float homing_speed = 120;
   Serial.println("Homing Steering motor - Started");
 
   while (!homingDone) {
-    local_heading = readCurrentHeading();
+    local_heading = readCurrentHeading(A0,A1);
 //    Serial.print("Homing Steering motor - In process:  ");
 //    Serial.println(local_heading);
 
@@ -563,7 +656,7 @@ bool driveMotorToHome() {  //  Returns true when completed
       stopWheelSteeringMotor();
 
       Serial.print("Homing Steering motor - Complete 1:  Current Heading: ");
-      local_heading = readCurrentHeading();
+      local_heading = readCurrentHeading(A0,A1);
       Serial.println(local_heading);
       Serial.println ("Holding for 1 second");
       delay(1000);
@@ -585,10 +678,10 @@ bool driveMotorToHome() {  //  Returns true when completed
 //------------------------------------------------------------------------
 
 // Reads the raw values for the two rotational position sensors
-float readCurrentHeading() {
-  sensorValueA0 = returnSensor(A0);
-  sensorValueA1 = returnSensor(A1);
-  return calculateHeading(sensorValueA0, sensorValueA1);
+float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
+  FL_sensorValueA0 = returnSensor(sensor_name_A);
+  FL_sensorValueA1 = returnSensor(sensor_name_B);
+  return calculateHeading(FL_sensorValueA0, FL_sensorValueA1);
 }
 //------------------------------------------------------------------------
 
