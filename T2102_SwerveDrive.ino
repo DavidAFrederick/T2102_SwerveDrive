@@ -63,7 +63,7 @@ bool homeWheel = false;
 
 DIO 54 
 PWM 15 -  15 PWM pins: 2 through 13, and 44, 45, and 46.
-Interrupts 6 - interrupt pins: 2, 3, 18, 19, 20, and 21. 
+Interrupts 6 - interrupt pins: 2, 3, 18, 19, 20, and 21.   (Used on one wheel and the rotary controller)
 16 analog input pins
 
 Needed:
@@ -83,9 +83,15 @@ A5 = Heading Sensor B = Module Black (FR)  - []
 A6 = Heading Sensor A = Module Silver (BR) - Back Right (BR)  - []
 A7 = Heading Sensor B = Module Silver (BR)  - []
 
+A8 = Robot Controller Joystick = X axis - 
+A9 = Robot Controller Joystick = Y axis - 
+
 Digital
-D2  - Not used - Interupt - []
-D3  - Not used - Interupt - []
+D0  - Can't be used -  TX/RX
+D1  - Can't be used -  TX/RX
+D2  - Rotary Encoder Data - Interupt - []
+D3  - Rotary Encoder Clock - Interupt - []
+D4  - Rotary Encoder Switch - []
 
 D5  - PWM - Motor Controller - EN-B - Silver (BR)  - Drive - [GRAY]
 D6  - PWM - Motor Controller - EN-A - Blue (FL)  - Heading - []
@@ -164,6 +170,8 @@ const int joystickSwitch_pin = 17;  // D17 [A3]
 // D0 - Not usable
 // Reset - Not used
 // Ground
+
+//- - (Name to Pin Assignments) - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 const int heading_motor_encoder_A_pin = 2;  // D2 (supports interupts)
 const int heading_motor_encoder_B_pin = 3;  // D3 (supports interupts)
