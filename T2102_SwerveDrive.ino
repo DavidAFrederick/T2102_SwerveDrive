@@ -1,4 +1,4 @@
-//  June 28, 2025  11:11 AM
+//  June 29, 2025  17:30
 //
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
@@ -74,58 +74,54 @@ Analog 8
 
 >> MEGA PIN ASSIGNMENTS <<
 Analog
-A0 = Heading Sensor A = Module White
-A1 = Heading Sensor B = Module White
-A2 = Heading Sensor A = Module Blue
-A3 = Heading Sensor B = Module Blue
-A4 = Heading Sensor A = Module Black
-A5 = Heading Sensor B = Module Black
-A6 = Heading Sensor A = Module Silver
-A7 = Heading Sensor B = Module Silver
+A0 = Heading Sensor A = Module White (BL) - Back Left (BL)  - []
+A1 = Heading Sensor B = Module White (BL) - []
+A2 = Heading Sensor A = Module Blue (FL) - Front Left (FL) - [] 
+A3 = Heading Sensor B = Module Blue (FL)  - []
+A4 = Heading Sensor A = Module Black (FR) - Front Right (FR)  - []
+A5 = Heading Sensor B = Module Black (FR)  - []
+A6 = Heading Sensor A = Module Silver (BR) - Back Right (BR)  - []
+A7 = Heading Sensor B = Module Silver (BR)  - []
 
 Digital
-D2  - Not used - Interupt
-D3  - Not used - Interupt
+D2  - Not used - Interupt - []
+D3  - Not used - Interupt - []
 
-D5  - PWM - Motor Controller - EN-B - Silver - Drive
-D6  - PWM - Motor Controller - EN-A - Blue  - Heading
-D7  - PWM - Motor Controller - EN-B - Blue  - Drive
+D5  - PWM - Motor Controller - EN-B - Silver (BR)  - Drive - [GRAY]
+D6  - PWM - Motor Controller - EN-A - Blue (FL)  - Heading - []
+D7  - PWM - Motor Controller - EN-B - Blue (FL)  - Drive - []
 
-D8  - PWM - Motor Controller - EN-B - White - Drive
-D9  - DIO - Motor Controller - IN-4 - White - Drive
-D10 - DIO - Motor Controller - IN-3 - White - Drive
-D11 - DIO - Motor Controller - IN-2 - White - Heading
-D12 - DIO - Motor Controller - IN-1 - White - Heading
-D13 - PWM - Motor Controller - EN-A - White - Heading
+D8  - PWM - Motor Controller - EN-B - White (BL) - Drive - [GRAY]
+D9  - DIO - Motor Controller - IN-4 - White (BL) - Drive - [PURPLE]
+D10 - DIO - Motor Controller - IN-3 - White (BL) - Drive - [BLUE]
+D11 - DIO - Motor Controller - IN-2 - White (BL) - Heading - [GREEN]
+D12 - DIO - Motor Controller - IN-1 - White (BL) - Heading - [YELLOW]
+D13 - PWM - Motor Controller - EN-A - White (BL) - Heading - [ORANGE]
 
-D20 - SDA - OLED
-D21 - SCL - OLED 
+D18 - Interrupt - Motor Encoder - C1 - [BROWN]
+D19 - Interrupt - Motor Encoder - C2 - [WHITE]
 
-D23 - DIO - Motor Controller - IN-1 - Blue - Heading
-D25 - DIO - Motor Controller - IN-2 - Blue - Heading
-D27 - DIO - Motor Controller - IN-3 - Blue - Drive
-D29 - DIO - Motor Controller - IN-4 - Blue - Drive
+D20 - Interrupt - SDA - OLED - []
+D21 - Interrupt - SCL - OLED  - []
 
-D33 - DIO - Motor Controller - IN-1 - Black - Heading
-D35 - DIO - Motor Controller - IN-2 - Black - Heading
-D37 - DIO - Motor Controller - IN-3 - Black - Drive
-D38 - DIO - Motor Controller - IN-4 - Black - Drive
+D23 - DIO - Motor Controller - IN-1 - Blue (FL) - Heading - []
+D25 - DIO - Motor Controller - IN-2 - Blue (FL) - Heading - []
+D27 - DIO - Motor Controller - IN-3 - Blue (FL) - Drive - []
+D29 - DIO - Motor Controller - IN-4 - Blue (FL) - Drive - []
 
-D44 - PWM - Motor Controller - EN-A - Black - Heading
-D46 - PWM - Motor Controller - EN-B - Black - Drive
+D33 - DIO - Motor Controller - IN-1 - Black (FR) - Heading - []
+D35 - DIO - Motor Controller - IN-2 - Black (FR) - Heading - []
+D37 - DIO - Motor Controller - IN-3 - Black (FR) - Drive - []
+D38 - DIO - Motor Controller - IN-4 - Black (FR) - Drive - []
 
-D43 - DIO - Motor Controller - IN-1 - Silver - Heading
-D45 - PWM - Motor Controller - EN-A - Silver - Heading
-D47 - DIO - Motor Controller - IN-2 - Silver - Heading
-D49 - DIO - Motor Controller - IN-3 - Silver - Drive
-D51 - DIO - Motor Controller - IN-4 - Silver - Drive
+D44 - PWM - Motor Controller - EN-A - Black (FR) - Heading - []
+D46 - PWM - Motor Controller - EN-B - Black (FR) - Drive - []
 
-
-
-
-
-
-
+D43 - DIO - Motor Controller - IN-1 - Silver  (BR)  - Heading - [ORANGE]
+D45 - PWM - Motor Controller - EN-A - Silver  (BR)  - Heading - [YELLOW]
+D47 - DIO - Motor Controller - IN-2 - Silver  (BR)  - Heading - [GREEN]
+D49 - DIO - Motor Controller - IN-3 - Silver  (BR)  - Drive - [BLUE]
+D51 - DIO - Motor Controller - IN-4 - Silver  (BR)  - Drive - [PURPLE]
 
 
 */
