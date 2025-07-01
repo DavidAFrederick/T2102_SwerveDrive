@@ -1,4 +1,4 @@
-//  June 29, 2025  17:30
+//  June 30, 2025  17:30
 //
 #include <Arduino.h>
 #include <Adafruit_SSD1306.h>
@@ -72,7 +72,7 @@ Interupts 12 - 2 for each wheel encoder, 4 for rotary controls
 PWM 8
 Analog 8
 
->> MEGA PIN ASSIGNMENTS <<
+// - - - - - >> MEGA PIN ASSIGNMENTS << - - - - - - - - - - - - - - - 
 Analog
 A0 = Heading Sensor A = Module White (BL) - Back Left (BL)  - []
 A1 = Heading Sensor B = Module White (BL) - []
@@ -83,8 +83,9 @@ A5 = Heading Sensor B = Module Black (FR)  - []
 A6 = Heading Sensor A = Module Silver (BR) - Back Right (BR)  - []
 A7 = Heading Sensor B = Module Silver (BR)  - []
 
-A8 = Robot Controller Joystick = X axis - 
-A9 = Robot Controller Joystick = Y axis - 
+A8 = Robot Controller Joystick - X axis - []
+A9 = Robot Controller Joystick - Y axis - []
+D53 = Robot Controller Joystick - Push Switch - []
 
 Digital
 D0  - Can't be used -  TX/RX
@@ -104,10 +105,10 @@ D11 - DIO - Motor Controller - IN-2 - White (BL) - Heading - [GREEN]
 D12 - DIO - Motor Controller - IN-1 - White (BL) - Heading - [YELLOW]
 D13 - PWM - Motor Controller - EN-A - White (BL) - Heading - [ORANGE]
 
-D18 - Interrupt - Motor Encoder - C1 - [BROWN]
-D19 - Interrupt - Motor Encoder - C2 - [WHITE]
+D18 - Interrupt - Motor Encoder - C1 - [BROWN] - White (BL)
+D19 - Interrupt - Motor Encoder - C2 - [WHITE] - White (BL)
 
-D20 - Interrupt - SDA - OLED - []
+D20 - Interrupt - SDA - OLED - [] - Not sure how PINS are identified for i2C
 D21 - Interrupt - SCL - OLED  - []
 
 D23 - DIO - Motor Controller - IN-1 - Blue (FL) - Heading - []
@@ -118,7 +119,7 @@ D29 - DIO - Motor Controller - IN-4 - Blue (FL) - Drive - []
 D33 - DIO - Motor Controller - IN-1 - Black (FR) - Heading - []
 D35 - DIO - Motor Controller - IN-2 - Black (FR) - Heading - []
 D37 - DIO - Motor Controller - IN-3 - Black (FR) - Drive - []
-D38 - DIO - Motor Controller - IN-4 - Black (FR) - Drive - []
+D39 - DIO - Motor Controller - IN-4 - Black (FR) - Drive - []
 
 D44 - PWM - Motor Controller - EN-A - Black (FR) - Heading - []
 D46 - PWM - Motor Controller - EN-B - Black (FR) - Drive - []
@@ -129,16 +130,18 @@ D47 - DIO - Motor Controller - IN-2 - Silver  (BR)  - Heading - [GREEN]
 D49 - DIO - Motor Controller - IN-3 - Silver  (BR)  - Drive - [BLUE]
 D51 - DIO - Motor Controller - IN-4 - Silver  (BR)  - Drive - [PURPLE]
 
+D53 = Robot Controller Joystick - Push Switch - []
+
 
 */
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Rotary Encoder Test Code
-int Counter1 = 0, LastCount1 = 0;                  //uneeded just for test
-void RotaryChanged();                              //we need to declare the func above so Rotary goes to the one below
-RotaryEncoder Rotary1(&RotaryChanged, 11, 12, 4);  // Pins  (DT),  (CLK),  (SW)
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+int Counter1 = 0, LastCount1 = 0;                // Not needed just for test
+void RotaryChanged();                            // we need to declare the func above so Rotary goes to the one below
+// RotaryEncoder Rotary1(&RotaryChanged, 2, 3, 4);  // + Pins  (DT),  (CLK),  (SW)
+RotaryEncoder Rotary1(&RotaryChanged, rotary_encoder_data_pin, rotary_encoder_clock_pin, 
+  rotary_encoder_switch_pin);  // + Pins  (DT),  (CLK),  (SW)
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
 int lastEncoded = 0;          // Used to track last encoder state
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -152,8 +155,8 @@ int lastEncoded = 0;          // Used to track last encoder state
 //  A0 - [D14] - A0 - Wheel heading Sensor - Base
 //  A1 - [D15] - A1 -  Wheel heading Sensor - Inverted
 
-// D16 -
-const int joystickSwitch_pin = 17;  // D17 [A3]
+//  D16 -
+//  D17 - joystickSwitch_pin = 17;  // D17 [A3]
 //  A4 - [D18] - SDA - OLED Display
 //  A5 - [D19] - SDC - OLED Display
 //  A6 - Joystick - Y movement value
@@ -173,18 +176,49 @@ const int joystickSwitch_pin = 17;  // D17 [A3]
 
 //- - (Name to Pin Assignments) - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-const int heading_motor_encoder_A_pin = 2;  // D2 (supports interupts)
-const int heading_motor_encoder_B_pin = 3;  // D3 (supports interupts)
+// TEMP:  D18 - Interrupt - Motor Encoder - C1 - [BROWN] - White (BL)
+// TEMP:  D19 - Interrupt - Motor Encoder - C2 - [WHITE] - White (BL)
 
-const int rotary_encoder_switch_pin = 4;             // D4
-const int steering_FL_motor_speed_PWM_pin = 5;          // D5
-const int steering_motor_direction_A_pin = 6;        // D6
-const int steering_motor_direction_B_pin = 7;        // D7
-const int wheel_rotation_motor_direction_A_pin = 8;  // D8
-const int wheel_rotation_motor_direction_B_pin = 9;  // D9
-const int wheel_rotation_FL_motor_speed_PWM_pin = 10;   // D10
-const int rotary_encoder_data_pin = 11;              // D11 - (NEEDS INTERUPT SUPPORT) - Not working
-const int rotary_encoder_clock_pin = 12;             // D12 - (NEEDS INTERUPT SUPPORT) - Not working//
+//  interrupt pins: 2, 3, 18, 19, 20, and 21. 
+
+const int rotary_encoder_data_pin = 2;              // D2   (Interrupt)
+const int rotary_encoder_clock_pin = 3;             // D3   (Interrupt)
+const int rotary_encoder_switch_pin = 4;            //+ D4
+
+const int joystickSwitch_pin = ;  // D
+
+
+const int BL_rotation_motor_encoder_A_pin = 19;  //+  (supports interupts) - Only White (BL) - One wheel
+const int BL_rotation_motor_encoder_B_pin = 18;  //+  (supports interupts)
+
+const int FL_steering_motor_speed_PWM_pin = 6;           // EN-A  Blue Corner
+const int FL_steering_motor_direction_A_pin = 23;        // IN-1
+const int FL_steering_motor_direction_B_pin = 25;        // IN-2
+const int FL_wheel_rotation_motor_direction_A_pin = 27;  // IN-3
+const int FL_wheel_rotation_motor_direction_B_pin = 29;  // IN-4
+const int FL_wheel_rotation_motor_speed_PWM_pin = 7;     // EN-B
+
+const int FR_steering_motor_speed_PWM_pin = 44;          // EN-A    Black Corner
+const int FR_steering_motor_direction_A_pin = 33;        // IN-1
+const int FR_steering_motor_direction_B_pin = 35;        // IN-2
+const int FR_wheel_rotation_motor_direction_A_pin = 37;  // IN-3
+const int FR_wheel_rotation_motor_direction_B_pin = 39;  // IN-4
+const int FR_wheel_rotation_motor_speed_PWM_pin = 46;    // EN-B
+
+const int BL_steering_motor_speed_PWM_pin = 13;          //     White Corner
+const int BL_steering_motor_direction_A_pin = 12;        // 
+const int BL_steering_motor_direction_B_pin = 11;        // 
+const int BL_wheel_rotation_motor_direction_A_pin = 10;  // 
+const int BL_wheel_rotation_motor_direction_B_pin = 9;   // 
+const int BL_wheel_rotation_motor_speed_PWM_pin = 8;     // 
+
+const int BR_steering_motor_speed_PWM_pin = 45;          // EN-A    Silver Corner
+const int BR_steering_motor_direction_A_pin = 43;        // IN-1
+const int BR_steering_motor_direction_B_pin = 47;        // IN-2
+const int BR_wheel_rotation_motor_direction_A_pin = 49;  // IN-3
+const int BR_wheel_rotation_motor_direction_B_pin = 51;  // IN-4
+const int BR_wheel_rotation_motor_speed_PWM_pin = 5;     // EN-B
+
 
 //=============================================================================
 
@@ -349,26 +383,26 @@ float calculateHeading(float sensorValueA0, float sensorValueA1) {
 void configure_pins() {
 
   // Signals to Motor Controller
-  pinMode(steering_FL_motor_speed_PWM_pin, OUTPUT);
-  pinMode(steering_motor_direction_A_pin, OUTPUT);
-  pinMode(steering_motor_direction_B_pin, OUTPUT);
-  pinMode(wheel_rotation_motor_direction_A_pin, OUTPUT);
-  pinMode(wheel_rotation_motor_direction_B_pin, OUTPUT);
-  pinMode(wheel_rotation_FL_motor_speed_PWM_pin, OUTPUT);
+  pinMode(FL_steering_motor_speed_PWM_pin, OUTPUT);
+  pinMode(FL_steering_motor_direction_A_pin, OUTPUT);
+  pinMode(FL_steering_motor_direction_B_pin, OUTPUT);
+  pinMode(FL_wheel_rotation_motor_direction_A_pin, OUTPUT);
+  pinMode(FL_wheel_rotation_motor_direction_B_pin, OUTPUT);
+  pinMode(FL_wheel_rotation_motor_speed_PWM_pin, OUTPUT);
 
-  digitalWrite(steering_motor_direction_A_pin, HIGH);
-  digitalWrite(steering_motor_direction_B_pin, LOW);
-  digitalWrite(wheel_rotation_motor_direction_A_pin, HIGH);
-  digitalWrite(wheel_rotation_motor_direction_B_pin, LOW);
+  digitalWrite(FL_steering_motor_direction_A_pin, HIGH);
+  digitalWrite(FL_steering_motor_direction_B_pin, LOW);
+  digitalWrite(FL_wheel_rotation_motor_direction_A_pin, HIGH);
+  digitalWrite(FL_wheel_rotation_motor_direction_B_pin, LOW);
 
-  //  pinMode(steering_FL_motor_speed_PWM_pin, OUTPUT);  // Why duplicated
-  //  pinMode(wheel_rotation_FL_motor_speed_PWM_pin, OUTPUT);
+  //  pinMode(FL_steering_motor_speed_PWM_pin, OUTPUT);  // Why duplicated
+  //  pinMode(FL_wheel_rotation_motor_speed_PWM_pin, OUTPUT);
 
   // Signals to Wheel Rotation Drive Motor Encoder
-  pinMode(heading_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
-  pinMode(heading_motor_encoder_B_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
-  attachInterrupt(digitalPinToInterrupt(heading_motor_encoder_A_pin), updateEncoder, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(heading_motor_encoder_B_pin), updateEncoder, CHANGE);
+  pinMode(BL_rotation_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
+  pinMode(BL_rotation_motor_encoder_B_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
+  attachInterrupt(digitalPinToInterrupt(BL_rotation_motor_encoder_A_pin), updateEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(BL_rotation_motor_encoder_B_pin), updateEncoder, CHANGE);
 
   // Joystick
   pinMode(joystickSwitch_pin, INPUT_PULLUP);
@@ -382,8 +416,8 @@ void configure_pins() {
 */
 
 void updateEncoder() {
-  int MSB = digitalRead(heading_motor_encoder_A_pin);
-  int LSB = digitalRead(heading_motor_encoder_B_pin);
+  int MSB = digitalRead(BL_rotation_motor_encoder_A_pin);
+  int LSB = digitalRead(BL_rotation_motor_encoder_B_pin);
   int encoded = (MSB << 1) | LSB;
   int sum = (lastEncoded << 2) | encoded;
 
@@ -435,11 +469,11 @@ void RotaryChanged() {
 
 void set_drive_wheel_rotation_direction(String direction) {
   if (direction == "forward") {
-    digitalWrite(wheel_rotation_motor_direction_A_pin, HIGH);
-    digitalWrite(wheel_rotation_motor_direction_B_pin, LOW);
+    digitalWrite(FL_wheel_rotation_motor_direction_A_pin, HIGH);
+    digitalWrite(FL_wheel_rotation_motor_direction_B_pin, LOW);
   } else if (direction == "reverse") {
-    digitalWrite(wheel_rotation_motor_direction_A_pin, LOW);
-    digitalWrite(wheel_rotation_motor_direction_B_pin, HIGH);
+    digitalWrite(FL_wheel_rotation_motor_direction_A_pin, LOW);
+    digitalWrite(FL_wheel_rotation_motor_direction_B_pin, HIGH);
   } else {
     Serial.println("Error in direction selection");
   }
@@ -452,11 +486,11 @@ void set_drive_wheel_rotation_direction(String direction) {
 void set_steering_motor_direction(String direction) {
   if (direction == "cw") {
 
-    digitalWrite(steering_motor_direction_A_pin, HIGH);
-    digitalWrite(steering_motor_direction_B_pin, LOW);
+    digitalWrite(FL_steering_motor_direction_A_pin, HIGH);
+    digitalWrite(FL_steering_motor_direction_B_pin, LOW);
   } else if (direction == "ccw") {
-    digitalWrite(steering_motor_direction_A_pin, LOW);
-    digitalWrite(steering_motor_direction_B_pin, HIGH);
+    digitalWrite(FL_steering_motor_direction_A_pin, LOW);
+    digitalWrite(FL_steering_motor_direction_B_pin, HIGH);
 
   } else {
     Serial.println("Error in direction selection");
@@ -502,7 +536,7 @@ float calculate_FL_motor_speed_value(int y_control_value) {
 //------------------------------------------------------------------------
 // Need to expand this code to support forward and reverse operations.  Copy from wheel heading speed control
 void set_right_front_wheel_speed(float FL_motor_speed) {
-  analogWrite(wheel_rotation_FL_motor_speed_PWM_pin, FL_motor_speed);
+  analogWrite(FL_wheel_rotation_motor_speed_PWM_pin, FL_motor_speed);
 }
 //------------------------------------------------------------------------
 
@@ -614,7 +648,7 @@ bool JoystickButtonPressed() {
 // Stop the motor
 
 void stopWheelSteeringMotor() {
-  analogWrite(steering_FL_motor_speed_PWM_pin, 0);
+  analogWrite(FL_steering_motor_speed_PWM_pin, 0);
 }
 //------------------------------------------------------------------------
 
@@ -632,10 +666,10 @@ void runWheelSteeringMotor(float local_motorSpeed) {
 
   if (local_motorSpeed >= 0) {
     set_steering_motor_direction("ccw");
-    analogWrite(steering_FL_motor_speed_PWM_pin, local_motorSpeed);
+    analogWrite(FL_steering_motor_speed_PWM_pin, local_motorSpeed);
   } else if (local_motorSpeed < 0) {
     set_steering_motor_direction("cw");
-    analogWrite(steering_FL_motor_speed_PWM_pin, -local_motorSpeed);
+    analogWrite(FL_steering_motor_speed_PWM_pin, -local_motorSpeed);
   }
 }
 
