@@ -134,17 +134,6 @@ D53 = Robot Controller Joystick - Push Switch - []
 
 
 */
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// Rotary Encoder Test Code
-int Counter1 = 0, LastCount1 = 0;                // Not needed just for test
-void RotaryChanged();                            // we need to declare the func above so Rotary goes to the one below
-// RotaryEncoder Rotary1(&RotaryChanged, 2, 3, 4);  // + Pins  (DT),  (CLK),  (SW)
-RotaryEncoder Rotary1(&RotaryChanged, rotary_encoder_data_pin, rotary_encoder_clock_pin, 
-  rotary_encoder_switch_pin);  // + Pins  (DT),  (CLK),  (SW)
-
-volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
-int lastEncoded = 0;          // Used to track last encoder state
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Arduino Pin Assignments
@@ -185,7 +174,7 @@ const int rotary_encoder_data_pin = 2;              // D2   (Interrupt)
 const int rotary_encoder_clock_pin = 3;             // D3   (Interrupt)
 const int rotary_encoder_switch_pin = 4;            //+ D4
 
-const int joystickSwitch_pin = ;  // D
+const int joystickSwitch_pin = 53;  // D
 
 
 const int BL_rotation_motor_encoder_A_pin = 19;  //+  (supports interupts) - Only White (BL) - One wheel
@@ -220,6 +209,18 @@ const int BR_wheel_rotation_motor_direction_B_pin = 51;  // IN-4
 const int BR_wheel_rotation_motor_speed_PWM_pin = 5;     // EN-B
 
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// Rotary Encoder Test Code
+int Counter1 = 0, LastCount1 = 0;                // Not needed just for test
+void RotaryChanged();                            // we need to declare the func above so Rotary goes to the one below
+// RotaryEncoder Rotary1(&RotaryChanged, 2, 3, 4);  // + Pins  (DT),  (CLK),  (SW)
+RotaryEncoder Rotary1(&RotaryChanged, rotary_encoder_data_pin, rotary_encoder_clock_pin, 
+  rotary_encoder_switch_pin);  // + Pins  (DT),  (CLK),  (SW)
+
+volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
+int lastEncoded = 0;          // Used to track last encoder state
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 //=============================================================================
 
 void setup() {
@@ -250,13 +251,13 @@ void loop() {
     loop_counter = loop_counter + 1;
   }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  //
+  //      BLUE       BLACK
   //     [ FL ]      [ FR ]
   //
   //             top
   //     
   //     [ BL ]      [ BR ]
-  //
+  //      WHITE       SILVER
 
   // Wheel Heading sensor
   FL_current_heading = readCurrentHeading(A0,A1);    // Update to pass parameters
@@ -390,15 +391,50 @@ void configure_pins() {
   pinMode(FL_wheel_rotation_motor_direction_B_pin, OUTPUT);
   pinMode(FL_wheel_rotation_motor_speed_PWM_pin, OUTPUT);
 
+  pinMode(FR_steering_motor_speed_PWM_pin, OUTPUT);
+  pinMode(FR_steering_motor_direction_A_pin, OUTPUT);
+  pinMode(FR_steering_motor_direction_B_pin, OUTPUT);
+  pinMode(FR_wheel_rotation_motor_direction_A_pin, OUTPUT);
+  pinMode(FR_wheel_rotation_motor_direction_B_pin, OUTPUT);
+  pinMode(FR_wheel_rotation_motor_speed_PWM_pin, OUTPUT);
+
+  pinMode(BL_steering_motor_speed_PWM_pin, OUTPUT);
+  pinMode(BL_steering_motor_direction_A_pin, OUTPUT);
+  pinMode(BL_steering_motor_direction_B_pin, OUTPUT);
+  pinMode(BL_wheel_rotation_motor_direction_A_pin, OUTPUT);
+  pinMode(BL_wheel_rotation_motor_direction_B_pin, OUTPUT);
+  pinMode(BL_wheel_rotation_motor_speed_PWM_pin, OUTPUT);
+
+  pinMode(BR_steering_motor_speed_PWM_pin, OUTPUT);
+  pinMode(BR_steering_motor_direction_A_pin, OUTPUT);
+  pinMode(BR_steering_motor_direction_B_pin, OUTPUT);
+  pinMode(BR_wheel_rotation_motor_direction_A_pin, OUTPUT);
+  pinMode(BR_wheel_rotation_motor_direction_B_pin, OUTPUT);
+  pinMode(BR_wheel_rotation_motor_speed_PWM_pin, OUTPUT);
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   digitalWrite(FL_steering_motor_direction_A_pin, HIGH);
   digitalWrite(FL_steering_motor_direction_B_pin, LOW);
   digitalWrite(FL_wheel_rotation_motor_direction_A_pin, HIGH);
   digitalWrite(FL_wheel_rotation_motor_direction_B_pin, LOW);
 
-  //  pinMode(FL_steering_motor_speed_PWM_pin, OUTPUT);  // Why duplicated
-  //  pinMode(FL_wheel_rotation_motor_speed_PWM_pin, OUTPUT);
+  digitalWrite(FR_steering_motor_direction_A_pin, HIGH);
+  digitalWrite(FR_steering_motor_direction_B_pin, LOW);
+  digitalWrite(FR_wheel_rotation_motor_direction_A_pin, HIGH);
+  digitalWrite(FR_wheel_rotation_motor_direction_B_pin, LOW);
 
-  // Signals to Wheel Rotation Drive Motor Encoder
+  digitalWrite(BL_steering_motor_direction_A_pin, HIGH);
+  digitalWrite(BL_steering_motor_direction_B_pin, LOW);
+  digitalWrite(BL_wheel_rotation_motor_direction_A_pin, HIGH);
+  digitalWrite(BL_wheel_rotation_motor_direction_B_pin, LOW);
+
+  digitalWrite(BR_steering_motor_direction_A_pin, HIGH);
+  digitalWrite(BR_steering_motor_direction_B_pin, LOW);
+  digitalWrite(BR_wheel_rotation_motor_direction_A_pin, HIGH);
+  digitalWrite(BR_wheel_rotation_motor_direction_B_pin, LOW);
+
+//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+  // Signals to Wheel Rotation Drive Motor Encoder on WHITE MODULE (only)
   pinMode(BL_rotation_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
   pinMode(BL_rotation_motor_encoder_B_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
   attachInterrupt(digitalPinToInterrupt(BL_rotation_motor_encoder_A_pin), updateEncoder, CHANGE);
