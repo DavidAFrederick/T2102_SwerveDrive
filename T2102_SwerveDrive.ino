@@ -25,12 +25,16 @@ float BL_sensorValueA1Component = 0;
 float BR_sensorValueA0Component = 0;
 float BR_sensorValueA1Component = 0;
 
+float FL_current_heading = 0;
+float FR_current_heading = 0;
+float BL_current_heading = 0;
+float BR_current_heading = 0;
+
 
 int lowThreshold = 200;
 int highThreshold = 760;
 float lineSlope = 0.342205323;
 float lineIntercept = 169;
-float FL_current_heading = 0;
 int analogControl = 0;
 int joystick_x_value = 0;
 int joystick_y_value = 0;
@@ -165,6 +169,17 @@ D53 = Robot Controller Joystick - Push Switch - []
 
 //- - (Name to Pin Assignments) - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+
+
+int BL_HeadingSensor_A = A0;
+int BL_HeadingSensor_B = A1;
+int FL_HeadingSensor_A = A2;
+int FL_HeadingSensor_B = A3;
+int FR_HeadingSensor_A = A4;
+int FR_HeadingSensor_B = A5;
+int BR_HeadingSensor_A = A6;
+int BR_HeadingSensor_B = A7;
+
 // TEMP:  D18 - Interrupt - Motor Encoder - C1 - [BROWN] - White (BL)
 // TEMP:  D19 - Interrupt - Motor Encoder - C2 - [WHITE] - White (BL)
 
@@ -215,7 +230,7 @@ int Counter1 = 0, LastCount1 = 0;                // Not needed just for test
 void RotaryChanged();                            // we need to declare the func above so Rotary goes to the one below
 // RotaryEncoder Rotary1(&RotaryChanged, 2, 3, 4);  // + Pins  (DT),  (CLK),  (SW)
 RotaryEncoder Rotary1(&RotaryChanged, rotary_encoder_data_pin, rotary_encoder_clock_pin, 
-  rotary_encoder_switch_pin);  // + Pins  (DT),  (CLK),  (SW)
+                      rotary_encoder_switch_pin);  // + Pins  (DT),  (CLK),  (SW)
 
 volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
 int lastEncoded = 0;          // Used to track last encoder state
@@ -259,14 +274,29 @@ void loop() {
   //     [ BL ]      [ BR ]
   //      WHITE       SILVER
 
+// BL_HeadingSensor_A = A0;
+// BL_HeadingSensor_B = A1;
+
   // Wheel Heading sensor
-  FL_current_heading = readCurrentHeading(A0,A1);    // Update to pass parameters
-  if (debugflag) displaySensorValuesAndHeading(FL_sensorValueA0, FL_sensorValueA1, FL_current_heading);
+  FL_current_heading = readCurrentHeading(FL_HeadingSensor_A,FL_HeadingSensor_B);    // Update to pass parameters
+  FR_current_heading = readCurrentHeading(FR_HeadingSensor_A,FR_HeadingSensor_B);    // Update to pass parameters
+  BL_current_heading = readCurrentHeading(BL_HeadingSensor_A,BL_HeadingSensor_B);    // Update to pass parameters
+  BR_current_heading = readCurrentHeading(BR_HeadingSensor_A,BR_HeadingSensor_B);    // Update to pass parameters
+
+  if (debugflag) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading, 
+                                                BL_current_heading, BR_current_heading );
 
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
   FL_motor_speed = calculate_FL_motor_speed_value(y_control_value);
-  set_right_front_wheel_speed(FL_motor_speed);
+  FR_motor_speed = FL_motor_speed;   //  FIRST CUT - MAKE ALL WHEELS TURN AT THE SAME SPEED
+  BL_motor_speed = FL_motor_speed;
+  BR_motor_speed = FL_motor_speed;
+
+  set_front_left_wheel_speed(FL_motor_speed);
+  set_front_right_wheel_speed(FL_motor_speed);
+  set_back_left_wheel_speed(FL_motor_speed);
+  set_back_right_wheel_speed(FL_motor_speed);
 
   //  When the joystick button is pressed, drive the wheel direction to zero.
   if (JoystickButtonPressed()) {
@@ -329,20 +359,22 @@ float returnSensor(int sensorPin) {
 
 /*
   Displays heading and raw sensors values (disabled) on the OLED.  SLOW
+  (FL_current_heading, FR_current_heading, BL_current_heading, BR_current_heading );
 */
-void displaySensorValuesAndHeading(int FL_sensorValueA0, int FL_sensorValueA1, float heading) {
+void displaySensorValuesAndHeading( float FL_current_heading, float FR_current_heading, 
+                                    float BL_current_heading, float BR_current_heading) {
 
   String sensorValuesString = "";
   String headingString = "";
 
-  headingString = "Heading:  " + String(heading);
+  headingString = "Heading: " + String(FL_current_heading) + "  "  
+                              + String(FR_current_heading) + "  " 
+                              + String(BL_current_heading) + "  " 
+                              + String(BR_current_heading) ;
   display.setCursor(0, 0);       // Set cursor position
   display.print(headingString);  // Print text
 
-  //  Uncomment to see individual sensors
-  //  sensorValuesString = "Sen:" + String(FL_sensorValueA0) + "  " + String(FL_sensorValueA1);
-  //  display.setCursor(0, 17); // Set cursor position
-  //  display.print(sensorValuesString); // Print text
+  //  display.setCursor(0, 17); // Set cursor position on next line
 
   display.display();       // Update the display
   delay(10);               //
@@ -571,8 +603,17 @@ float calculate_FL_motor_speed_value(int y_control_value) {
 }
 //------------------------------------------------------------------------
 // Need to expand this code to support forward and reverse operations.  Copy from wheel heading speed control
-void set_right_front_wheel_speed(float FL_motor_speed) {
+void set_front_left_wheel_speed(float FL_motor_speed) {
   analogWrite(FL_wheel_rotation_motor_speed_PWM_pin, FL_motor_speed);
+}
+void set_front_right_wheel_speed(float FR_motor_speed) {
+  analogWrite(FR_wheel_rotation_motor_speed_PWM_pin, FR_motor_speed);
+}
+void set_back_left_wheel_speed(float BL_motor_speed) {
+  analogWrite(BL_wheel_rotation_motor_speed_PWM_pin, BL_motor_speed);
+}
+void set_back_right_wheel_speed(float BR_motor_speed) {
+  analogWrite(BR_wheel_rotation_motor_speed_PWM_pin, BR_motor_speed);
 }
 //------------------------------------------------------------------------
 
