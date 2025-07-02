@@ -45,10 +45,12 @@ float joystick_x_middle_value = 510;
 float joystick_deadzone = 5;
 
 
+float motor_speed = 0;
 float FL_motor_speed = 0;
 float FR_motor_speed = 0;
 float BL_motor_speed = 0;
 float BR_motor_speed = 0;
+float desired_wheel_heading_value = 0;
 float FL_desired_wheel_heading_value = 0;
 float FR_desired_wheel_heading_value = 0;
 float BL_desired_wheel_heading_value = 0;
@@ -294,15 +296,20 @@ void loop() {
 
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
-  FL_motor_speed = calculate_motor_speed_value(y_control_value);
-  FR_motor_speed = FL_motor_speed;  //  FIRST CUT - MAKE ALL WHEELS TURN AT THE SAME SPEED
-  BL_motor_speed = FL_motor_speed;
-  BR_motor_speed = FL_motor_speed;
+  motor_speed = calculate_motor_speed_value(y_control_value);
+  FL_motor_speed = motor_speed;  //  FIRST CUT - MAKE ALL WHEELS TURN AT THE SAME SPEED
+  FR_motor_speed = motor_speed;
+  BL_motor_speed = motor_speed;
+  BR_motor_speed = motor_speed;
 
-  set_wheel_speed(FL_wheel_rotation_motor_speed_PWM_pin, FL_motor_speed);
-  set_wheel_speed(FR_wheel_rotation_motor_speed_PWM_pin, FR_motor_speed);
-  set_wheel_speed(BL_wheel_rotation_motor_speed_PWM_pin, BL_motor_speed);
-  set_wheel_speed(BR_wheel_rotation_motor_speed_PWM_pin, BR_motor_speed);
+  set_wheel_speed(FL_wheel_rotation_motor_direction_A_pin, FL_wheel_rotation_motor_direction_B_pin,
+                  FL_wheel_rotation_motor_speed_PWM_pin, FL_motor_speed);
+  set_wheel_speed(FR_wheel_rotation_motor_direction_A_pin, FR_wheel_rotation_motor_direction_B_pin,
+                  FR_wheel_rotation_motor_speed_PWM_pin, FR_motor_speed);
+  set_wheel_speed(BL_wheel_rotation_motor_direction_A_pin, BL_wheel_rotation_motor_direction_B_pin,
+                  BL_wheel_rotation_motor_speed_PWM_pin, BL_motor_speed);
+  set_wheel_speed(BR_wheel_rotation_motor_direction_A_pin, BR_wheel_rotation_motor_direction_B_pin,
+                  BR_wheel_rotation_motor_speed_PWM_pin, BR_motor_speed);
 
   //  When the joystick button is pressed, drive the wheel direction to zero.
   if (JoystickButtonPressed()) {
@@ -315,10 +322,15 @@ void loop() {
     x_control_value = get_joystick_x_control_value();
 
     desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
-    set_wheel_heading(FL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FL_current_heading);
-    set_wheel_heading(FR_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FR_current_heading);
-    set_wheel_heading(BL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, BL_current_heading);
-    set_wheel_heading(BR_steering_motor_speed_PWM_pin, desired_wheel_heading_value, BR_current_heading);
+
+    set_wheel_heading(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
+                      FL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FL_current_heading);
+    set_wheel_heading(FR_steering_motor_direction_A_pin, FR_steering_motor_direction_B_pin,
+                      FR_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FR_current_heading);
+    set_wheel_heading(BL_steering_motor_direction_A_pin, BL_steering_motor_direction_B_pin,
+                      BL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, BL_current_heading);
+    set_wheel_heading(BR_steering_motor_direction_A_pin, BR_steering_motor_direction_B_pin,
+                      BR_steering_motor_speed_PWM_pin, desired_wheel_heading_value, BR_current_heading);
   }
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -515,8 +527,8 @@ float get_joystick_x_control_value() {
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Read the joystick y position (forward/backward) and return 1023 (full forward) to 0 (Full reverse)
-float get_joystick_y_control_value() {  // Forward speed
-  y_joystick = analogRead(joystick_y_axis);      // 0-1023
+float get_joystick_y_control_value() {             // Forward speed
+  float y_joystick = analogRead(joystick_y_axis);  // 0-1023
   return y_joystick;
 }
 
@@ -543,30 +555,29 @@ void RotaryChanged() {
 
 // Controls the direction of rotation of the wheel drive motor
 
-void set_drive_wheel_rotation_direction(String direction) {
+void set_drive_wheel_rotation_direction(String direction, int ww_wheel_rotation_motor_direction_A_pin,
+                                        int ww_wheel_rotation_motor_direction_B_pin) {
   if (direction == "forward") {
-    digitalWrite(FL_wheel_rotation_motor_direction_A_pin, HIGH);
-    digitalWrite(FL_wheel_rotation_motor_direction_B_pin, LOW);
+    digitalWrite(ww_wheel_rotation_motor_direction_A_pin, HIGH);
+    digitalWrite(ww_wheel_rotation_motor_direction_B_pin, LOW);
   } else if (direction == "reverse") {
-    digitalWrite(FL_wheel_rotation_motor_direction_A_pin, LOW);
-    digitalWrite(FL_wheel_rotation_motor_direction_B_pin, HIGH);
+    digitalWrite(ww_wheel_rotation_motor_direction_A_pin, LOW);
+    digitalWrite(ww_wheel_rotation_motor_direction_B_pin, HIGH);
   } else {
     Serial.println("Error in direction selection");
   }
 }
 
 //------------------------------------------------------------------------
-
 // Controls the direction of rotation of the wheel heading drive motor
-
-void set_steering_motor_direction(String direction) {
+void set_steering_motor_direction(String direction, int ww_steering_motor_direction_A_pin,
+                                  int ww_steering_motor_direction_B_pin) {
   if (direction == "cw") {
-
-    digitalWrite(FL_steering_motor_direction_A_pin, HIGH);
-    digitalWrite(FL_steering_motor_direction_B_pin, LOW);
+    digitalWrite(ww_steering_motor_direction_A_pin, HIGH);
+    digitalWrite(ww_steering_motor_direction_B_pin, LOW);
   } else if (direction == "ccw") {
-    digitalWrite(FL_steering_motor_direction_A_pin, LOW);
-    digitalWrite(FL_steering_motor_direction_B_pin, HIGH);
+    digitalWrite(ww_steering_motor_direction_A_pin, LOW);
+    digitalWrite(ww_steering_motor_direction_B_pin, HIGH);
 
   } else {
     Serial.println("Error in direction selection");
@@ -586,19 +597,16 @@ float calculate_motor_speed_value(int y_control_value) {
 
   // Forward movement >> input range 510 to 1023 >> output range 0 254
   if (y_control_value > (joystick_y_middle_value + joystick_deadzone)) {
-    // set_drive_wheel_rotation_direction("forward");
     local_motor_speed = map(y_control_value, joystick_y_middle_value, 1023, 0, 254);
     //    Serial.print (" Forward> ");
 
     // Reverse movement >> input range 0 to 510 >> output range 254 to 0
   } else if (y_control_value < (joystick_y_middle_value - joystick_deadzone)) {
-    // set_drive_wheel_rotation_direction("reverse");
     local_motor_speed = map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // ERROR???
     // FL_motor_speed = map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // Updated
     //    Serial.print (" Reverse> ");
 
-  } else if ((y_control_value > (joystick_y_middle_value - joystick_deadzone)) && 
-             (y_control_value < (joystick_y_middle_value + joystick_deadzone))) {
+  } else if ((y_control_value > (joystick_y_middle_value - joystick_deadzone)) && (y_control_value < (joystick_y_middle_value + joystick_deadzone))) {
     local_motor_speed = 0;
     //    Serial.print (" Deadzone> ");
   }
@@ -615,9 +623,18 @@ float calculate_motor_speed_value(int y_control_value) {
 // Need to expand this code to support forward and reverse operations.  Copy from wheel heading speed control
 /*
 Set the wheel speed (0-254) to the PWM interface (ww_wheel_rotation_motor_speed_PWM_pin)
-NEED TO EXPAND TO PROVIDE REVERSE SPEEDS (-254 to 254)
 */
-void set_wheel_speed(int ww_wheel_rotation_motor_speed_PWM_pin, float local_motor_speed) {
+void set_wheel_speed(int ww_wheel_rotation_motor_direction_A_pin, int ww_wheel_rotation_motor_direction_B_pin,
+                     int ww_wheel_rotation_motor_speed_PWM_pin, float local_motor_speed) {
+  if (local_motor_speed >= 0) {
+    set_drive_wheel_rotation_direction("forward", ww_wheel_rotation_motor_direction_A_pin,
+                                       ww_wheel_rotation_motor_direction_B_pin);
+
+  } else if (local_motor_speed < 0) {
+    set_drive_wheel_rotation_direction("reverse", ww_wheel_rotation_motor_direction_A_pin,
+                                       ww_wheel_rotation_motor_direction_B_pin);
+    local_motor_speed = -local_motor_speed;
+  }
   analogWrite(ww_wheel_rotation_motor_speed_PWM_pin, local_motor_speed);
 }
 
@@ -660,7 +677,8 @@ float convert_joystick_to_heading_value(int joystick_x_value) {
 
 // Drive the wheel to the desired value based on the current position
 
-void set_wheel_heading(int ww_steering_motor_speed_PWM_pin, float desired_wheel_heading_value,
+void set_wheel_heading(int ww_steering_motor_direction_A_pin, int ww_steering_motor_direction_B_pin,
+                       int ww_steering_motor_speed_PWM_pin, float desired_wheel_heading_value,
                        float current_heading) {
   // Rotate left from center is negative heading
   // Rotate right from center is positive heading
@@ -681,9 +699,11 @@ void set_wheel_heading(int ww_steering_motor_speed_PWM_pin, float desired_wheel_
   int option = 0;
 
   if (abs(current_heading) > 160) {
-    runWheelSteeringMotor(ww_steering_motor_speed_PWM_pin, 0);
-    Serial.print(ww_steering_motor_speed_PWM_pin)
-      Serial.println(" :Reached +/- 170 degree limit");
+    runWheelSteeringMotor(ww_steering_motor_direction_A_pin, ww_steering_motor_direction_B_pin,
+                          ww_steering_motor_speed_PWM_pin, 0);
+
+    Serial.print(ww_steering_motor_speed_PWM_pin);
+    Serial.println(" :Reached +/- 170 degree limit");
   }
 
   // Check to see if within the tolerance window
@@ -705,9 +725,9 @@ void set_wheel_heading(int ww_steering_motor_speed_PWM_pin, float desired_wheel_
   }
 
   if (debugflag && false) {
-    Serial, print("Wheel: ")
-              Serial.print(ww_steering_motor_speed_PWM_pin)
-                Serial.print("Current: ");
+    Serial.print("Wheel: ");
+    Serial.print(ww_steering_motor_speed_PWM_pin);
+    Serial.print("Current: ");
     Serial.print(current_heading);
     Serial.print(" Desired: ");
     Serial.print(desired_wheel_heading_value);
@@ -718,7 +738,8 @@ void set_wheel_heading(int ww_steering_motor_speed_PWM_pin, float desired_wheel_
     Serial.print(" case: ");
     Serial.println(option);
   }
-  runWheelSteeringMotor(ww_steering_motor_speed_PWM_pin, heading_change_speed);
+  runWheelSteeringMotor(ww_steering_motor_direction_A_pin, ww_steering_motor_direction_B_pin,
+                        ww_steering_motor_speed_PWM_pin, heading_change_speed);
 
   // FL_steering_motor_speed_PWM_pin
   // FR_steering_motor_speed_PWM_pin
@@ -752,18 +773,19 @@ void stopWheelSteeringMotor() {
   If input is greater than zero, set motor to forward and run the motor
   If input is less than zero, set motor to reverse direction, negate the input and run the motor
 */
-void runWheelSteeringMotor(int ww_steering_motor_speed_PWM_pin, float local_motorSpeed) {
+void runWheelSteeringMotor(int ww_steering_motor_direction_A_pin, int ww_steering_motor_direction_B_pin,
+                           int ww_steering_motor_speed_PWM_pin, float local_motorSpeed) {
 
   if (debugflag && false) {
-    Serial.print("FL Speed ");
+    Serial.print("Speed ");
     Serial.println(local_motorSpeed);
   }
 
   if (local_motorSpeed >= 0) {
-    set_steering_motor_direction("ccw");
+    set_steering_motor_direction("ccw", ww_steering_motor_direction_A_pin, ww_steering_motor_direction_B_pin);
     analogWrite(ww_steering_motor_speed_PWM_pin, local_motorSpeed);
   } else if (local_motorSpeed < 0) {
-    set_steering_motor_direction("cw");
+    set_steering_motor_direction("cw", ww_steering_motor_direction_A_pin, ww_steering_motor_direction_B_pin);
     analogWrite(ww_steering_motor_speed_PWM_pin, -local_motorSpeed);
   }
 }
@@ -795,62 +817,75 @@ bool driveMotorToHome() {  //  Returns true when completed
 
     if (abs(FL_local_heading) < local_heading_tolerance) {
       FL_homingDone = true;
-      runWheelSteeringMotor(FL_steering_motor_speed_PWM_pin, 0)
+      runWheelSteeringMotor(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
+                            FL_steering_motor_speed_PWM_pin, 0);
 
-        Serial.print("Homing Steering motor - Complete 1:  Current Heading: ");
+      Serial.print("Homing Steering motor - Complete 1:  Current Heading: ");
       Serial.println(FL_local_heading);
-    } else if (local_heading >= 0) {
-      runWheelSteeringMotor(FL_steering_motor_speed_PWM_pin, homing_speed)
+    } else if (FL_local_heading >= 0) {
+      runWheelSteeringMotor(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
+                            FL_steering_motor_speed_PWM_pin, homing_speed);
       // 0-254 is CountClockwise, -254 to 0 is Clockwise
       //      Serial.print("Homing Steering motor - Positive  ");
     } else {
-      runWheelSteeringMotor(FL_steering_motor_speed_PWM_pin, -homing_speed)
+      runWheelSteeringMotor(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
+                            FL_steering_motor_speed_PWM_pin, -homing_speed);
     }
     //- - - - - - - -
+
     FR_local_heading = readCurrentHeading(FR_HeadingSensor_A, FR_HeadingSensor_B);
     if (abs(FR_local_heading) < local_heading_tolerance) {
       FR_homingDone = true;
-      runWheelSteeringMotor(FR_steering_motor_speed_PWM_pin, 0)
+      runWheelSteeringMotor(FR_steering_motor_direction_A_pin, FR_steering_motor_direction_B_pin,
+                            FR_steering_motor_speed_PWM_pin, 0);
 
-        Serial.print("Homing Steering motor - Complete 1:  Current Heading: ");
+      Serial.print("Homing Steering motor - Complete 1:  Current Heading: ");
       Serial.println(FR_local_heading);
-    } else if (local_heading >= 0) {
-      runWheelSteeringMotor(FR_steering_motor_speed_PWM_pin, homing_speed)
+    } else if (FR_local_heading >= 0) {
+      runWheelSteeringMotor(FR_steering_motor_direction_A_pin, FR_steering_motor_direction_B_pin,
+                            FR_steering_motor_speed_PWM_pin, homing_speed);
       // 0-254 is CountClockwise, -254 to 0 is Clockwise
       //      Serial.print("Homing Steering motor - Positive  ");
     } else {
-      runWheelSteeringMotor(FR_steering_motor_speed_PWM_pin, -homing_speed)
+      runWheelSteeringMotor(FR_steering_motor_direction_A_pin, FR_steering_motor_direction_B_pin,
+                            FR_steering_motor_speed_PWM_pin, -homing_speed);
     }
     //- - - - - - - -
     BL_local_heading = readCurrentHeading(BL_HeadingSensor_A, BL_HeadingSensor_B);
     if (abs(BL_local_heading) < local_heading_tolerance) {
       BL_homingDone = true;
-      runWheelSteeringMotor(BL_steering_motor_speed_PWM_pin, 0)
+      runWheelSteeringMotor(BL_steering_motor_direction_A_pin, BL_steering_motor_direction_B_pin,
+                            BL_steering_motor_speed_PWM_pin, 0);
 
-        Serial.print("Homing Steering motor - Complete 1:  Current Heading: ");
+      Serial.print("Homing Steering motor - Complete 1:  Current Heading: ");
       Serial.println(BL_local_heading);
-    } else if (local_heading >= 0) {
-      runWheelSteeringMotor(BL_steering_motor_speed_PWM_pin, homing_speed)
+    } else if (BL_local_heading >= 0) {
+      runWheelSteeringMotor(BL_steering_motor_direction_A_pin, BL_steering_motor_direction_B_pin,
+                            BL_steering_motor_speed_PWM_pin, homing_speed);
       // 0-254 is CountClockwise, -254 to 0 is Clockwise
       //      Serial.print("Homing Steering motor - Positive  ");
     } else {
-      runWheelSteeringMotor(BL_steering_motor_speed_PWM_pin, -homing_speed)
+      runWheelSteeringMotor(BL_steering_motor_direction_A_pin, BL_steering_motor_direction_B_pin,
+                            BL_steering_motor_speed_PWM_pin, -homing_speed);
     }
 
     //- - - - - - - -
     BR_local_heading = readCurrentHeading(BR_HeadingSensor_A, BR_HeadingSensor_B);
     if (abs(BR_local_heading) < local_heading_tolerance) {
       BR_homingDone = true;
-      runWheelSteeringMotor(BR_steering_motor_speed_PWM_pin, 0)
+      runWheelSteeringMotor(BR_steering_motor_direction_A_pin, BR_steering_motor_direction_B_pin,
+                            BR_steering_motor_speed_PWM_pin, 0);
 
-        Serial.print("Homing Steering motor - Complete 1:  Current Heading: ");
+      Serial.print("Homing Steering motor - Complete 1:  Current Heading: ");
       Serial.println(BR_local_heading);
-    } else if (local_heading >= 0) {
-      runWheelSteeringMotor(BR_steering_motor_speed_PWM_pin, homing_speed)
+    } else if (BR_local_heading >= 0) {
+      runWheelSteeringMotor(BR_steering_motor_direction_A_pin, BR_steering_motor_direction_B_pin,
+                            BR_steering_motor_speed_PWM_pin, homing_speed);
       // 0-254 is CountClockwise, -254 to 0 is Clockwise
       //      Serial.print("Homing Steering motor - Positive  ");
     } else {
-      runWheelSteeringMotor(BR_steering_motor_speed_PWM_pin, -homing_speed)
+      runWheelSteeringMotor(BR_steering_motor_direction_A_pin, BR_steering_motor_direction_B_pin,
+                            BR_steering_motor_speed_PWM_pin, -homing_speed);
     }
 
     homingDone = FL_homingDone && FR_homingDone && BL_homingDone && BR_homingDone;
@@ -864,8 +899,8 @@ bool driveMotorToHome() {  //  Returns true when completed
 
 // Reads the raw values for the two rotational position sensors
 float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
-  sensorValueA0 = returnSensor(sensor_name_A);
-  sensorValueA1 = returnSensor(sensor_name_B);
+  float sensorValueA0 = returnSensor(sensor_name_A);
+  float sensorValueA1 = returnSensor(sensor_name_B);
   return calculateHeading(sensorValueA0, sensorValueA1);
 }
 //------------------------------------------------------------------------
