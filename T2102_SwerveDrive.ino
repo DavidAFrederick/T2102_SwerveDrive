@@ -31,10 +31,6 @@ float BL_current_heading = 0;
 float BR_current_heading = 0;
 
 
-int lowThreshold = 200;
-int highThreshold = 760;
-float lineSlope = 0.342205323;
-float lineIntercept = 169;
 int analogControl = 0;
 int joystick_x_value = 0;
 int joystick_y_value = 0;
@@ -182,16 +178,16 @@ D51 - DIO - Motor Controller - IN-4 - Silver  (BR)  - Drive - [PURPLE]
 
 
 
-int BL_HeadingSensor_A = A0;  // White
-int BL_HeadingSensor_B = A1;
-int FL_HeadingSensor_A = A2;  //  Blue
-int FL_HeadingSensor_B = A3;
-int FR_HeadingSensor_A = A4;  //  Black
-int FR_HeadingSensor_B = A5;
-int BR_HeadingSensor_A = A7; // A6;  // Silver - Wires reversed
-int BR_HeadingSensor_B = A6; //  A7;
-int joystick_x_axis = A9;  // Full Left = 0, Full Right = 1023, middle = 508
-int joystick_y_axis = A8;  // Full forward = 1023, Full back = 0, Middle = 510
+int BL_HeadingSensor_A = A1;  // A0;  // White
+int BL_HeadingSensor_B = A0;  // A1;
+int FL_HeadingSensor_A = A3;  // A2;  //  Blue
+int FL_HeadingSensor_B = A2;  // A3;
+int FR_HeadingSensor_A = A5;  // A4;  //  Black
+int FR_HeadingSensor_B = A4;  // A5;
+int BR_HeadingSensor_A = A6;  // Silver -
+int BR_HeadingSensor_B = A7;  //
+int joystick_x_axis = A9;     // Full Left = 0, Full Right = 1023, middle = 508
+int joystick_y_axis = A8;     // Full forward = 1023, Full back = 0, Middle = 510
 
 // TEMP:  D18 - Interrupt - Motor Encoder - C1 - [BROWN] - White (BL)
 // TEMP:  D19 - Interrupt - Motor Encoder - C2 - [WHITE] - White (BL)
@@ -269,9 +265,10 @@ void loop() {
   //  Enable the debug flag once per second (1000) to print status and loops per second count
   // loop_counter = loop_counter + 1;   // Moved to inside of the loop
   if (millis() > nextTime) {
-    nextTime += 4000;  // Number of milliseconds between prints to monitor
+    nextTime += 1000;  // Number of milliseconds between prints to monitor
     Serial.print("LPS: ");
     Serial.println(loop_counter);
+
     loop_counter = 0;
     debugflag = true;  // Control printing for debugging
   } else {
@@ -299,16 +296,16 @@ void loop() {
   if (debugflag && false) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
                                                         BL_current_heading, BR_current_heading);
 
-  if (debugflag && false) {
-    Serial.print("Headings:  blue FL: ");
-    Serial.print(FL_current_heading);
-    Serial.print(" black FR: ");
-    Serial.print(FR_current_heading);
-    Serial.print(" white BL: ");
-    Serial.print(BL_current_heading);
-    Serial.print(" silver BR: ");
-    Serial.println(BR_current_heading);
-  }
+  // if (debugflag && false) {
+  //   Serial.print("Headings:  blue FL: ");
+  //   Serial.print(FL_current_heading);
+  //   Serial.print(" black FR: ");
+  //   Serial.print(FR_current_heading);
+  //   Serial.print(" white BL: ");
+  //   Serial.print(BL_current_heading);
+  //   Serial.print(" silver BR: ");
+  //   Serial.println(BR_current_heading);
+  // }
 
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
@@ -339,13 +336,13 @@ void loop() {
 
     desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
 
-    if (debugflag && false) {
+    // if (debugflag && true) {
 
-      Serial.print("Joystick Test: X: ");
-      Serial.print(x_control_value);
-      Serial.print("   y = ");
-      Serial.println(y_control_value);
-    }
+    //   Serial.print("Joystick Test: X: ");
+    //   Serial.print(x_control_value);
+    //   Serial.print("   y = ");
+    //   Serial.println(y_control_value);
+    // }
 
     set_wheel_heading(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
                       FL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FL_current_heading);
@@ -433,6 +430,12 @@ void displaySensorValuesAndHeading(float FL_current_heading, float FR_current_he
   Need two sensors to cover the 30 degree blank segment
 */
 float calculateHeading(float sensorValueA0, float sensorValueA1) {
+
+  int lowThreshold = 200;
+  int highThreshold = 760;
+  float lineSlope = 0.342205323;
+  float lineIntercept = 169;
+
   float sensorValueA0Component = 0;
   float sensorValueA1Component = 0;
 
@@ -452,15 +455,25 @@ float calculateHeading(float sensorValueA0, float sensorValueA1) {
   }
   int heading = sensorValueA0Component + sensorValueA1Component;
 
-  // if (debugflag && false) {
-  //   Serial.print();
-  //   Serial.print();
-  //   Serial.print();
-  //   Serial.print();
-  //   Serial.print();
-  //   Serial.print();
-  //   Serial.print();
-  // }
+  if (debugflag && false) {
+
+    // Serial.print(" [Silver]BR: ");
+    // Serial.print(analogRead(A6));
+    // Serial.print(" ");
+    // Serial.print(analogRead(A7));
+    // Serial.println(" ");
+
+    Serial.print("Sensor values: ");
+    Serial.print(sensorValueA0);
+    Serial.print(" ");
+    Serial.print(sensorValueA1);
+    Serial.print("    A0 Comp: ");
+    Serial.print(sensorValueA0Component);
+    Serial.print("    A1 Comp: ");
+    Serial.print(sensorValueA1Component);
+    Serial.print(" Heading: ");
+    Serial.println(heading);
+  }
 
 
 
@@ -597,9 +610,13 @@ void set_drive_wheel_rotation_direction(String direction, int ww_wheel_rotation_
   if (direction == "forward") {
     digitalWrite(ww_wheel_rotation_motor_direction_A_pin, HIGH);
     digitalWrite(ww_wheel_rotation_motor_direction_B_pin, LOW);
+
+    // if (debugflag && false) { Serial.print("Forward "); }
+
   } else if (direction == "reverse") {
     digitalWrite(ww_wheel_rotation_motor_direction_A_pin, LOW);
     digitalWrite(ww_wheel_rotation_motor_direction_B_pin, HIGH);
+    // if (debugflag && false) { Serial.print("Reverse "); }
   } else {
     Serial.println("Error in direction selection");
   }
@@ -673,6 +690,14 @@ void set_wheel_speed(int ww_wheel_rotation_motor_direction_A_pin, int ww_wheel_r
     local_motor_speed = -local_motor_speed;
   }
   analogWrite(ww_wheel_rotation_motor_speed_PWM_pin, local_motor_speed);
+
+
+  if (debugflag && false) {
+    Serial.print("Y Axis:   Analog In: ");
+    Serial.print(y_control_value);
+    Serial.print("  Mapped:");
+    Serial.println(local_motor_speed);
+  }
 }
 
 //------------------------------------------------------------------------
@@ -739,7 +764,7 @@ void set_wheel_heading(int ww_steering_motor_direction_A_pin, int ww_steering_mo
     runWheelSteeringMotor(ww_steering_motor_direction_A_pin, ww_steering_motor_direction_B_pin,
                           ww_steering_motor_speed_PWM_pin, 0);
 
-    if (debugflag && true) {
+    if (debugflag && false) {
       Serial.print(ww_steering_motor_speed_PWM_pin);
       Serial.println(" :Reached +/- 170 degree limit");
     }
@@ -941,14 +966,23 @@ float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
   float sensorValueA0 = returnSensor(sensor_name_A);
   float sensorValueA1 = returnSensor(sensor_name_B);
 
-  if (debugflag && true) {
+  if (debugflag && false) {
+    // Serial.println(" ");
 
-      Serial.print("Calculate heading:  Sensor  A name: ");
-      Serial.print(sensor_name_A);
-      Serial.print("   Sensor  B name: ");
-      Serial.print(sensor_name_B);
-      Serial.print("   Calculated Heading ");
-      Serial.println(calculateHeading(sensorValueA0, sensorValueA1));
+
+    if (sensor_name_A == 56) Serial.print("Blue   - FL - ");
+    if (sensor_name_A == 58) Serial.print("Black  - FR - ");
+    if (sensor_name_A == 54) Serial.print("White  - BL - ");
+    if (sensor_name_A == 60) Serial.print("Silver - BR - ");
+
+
+
+    Serial.print(" Sensor  A name: ");
+    Serial.print(sensor_name_A);
+    Serial.print(" Sensor  B name: ");
+    Serial.print(sensor_name_B);
+    Serial.print("   Calculated Heading ");
+    Serial.println(calculateHeading(sensorValueA0, sensorValueA1));
   }
 
 
