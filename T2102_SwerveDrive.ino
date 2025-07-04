@@ -83,30 +83,36 @@ PWM 8
 Analog 8
 
 // - - - - - >> MEGA PIN ASSIGNMENTS << - - - - - - - - - - - - - - - 
-Analog
-A0 = Heading Sensor A = Module White (BL) - Back Left (BL)  - []
-A1 = Heading Sensor B = Module White (BL) - []
-A2 = Heading Sensor A = Module Blue (FL) - Front Left (FL) - [] 
-A3 = Heading Sensor B = Module Blue (FL)  - []
-A4 = Heading Sensor A = Module Black (FR) - Front Right (FR)  - []
-A5 = Heading Sensor B = Module Black (FR)  - []
-A6 = Heading Sensor A = Module Silver (BR) - Back Right (BR)  - []
-A7 = Heading Sensor B = Module Silver (BR)  - []
+Analog           Calling order FL(Blue),    FR(Black),    BL(White),   BR(Silver)
+    When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90.
+    When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right.
+UPDATED:
+  Rotate left is Positive 0 to +180, 
+  Rotate to the right is Negative 0 to -180
 
-A8 = Robot Controller Joystick - X axis - []
-A9 = Robot Controller Joystick - Y axis - []
-D53 = Robot Controller Joystick - Push Switch - []
+A0 = Heading Sensor A = Module White (BL) - Back Left (BL)  - [Red]  
+A1 = Heading Sensor B = Module White (BL) - [Brown]
+A2 = Heading Sensor A = Module Blue (FL) - Front Left (FL) - [Blue]  
+A3 = Heading Sensor B = Module Blue (FL)  - [Green]
+A4 = Heading Sensor A = Module Black (FR) - Front Right (FR)  - [Purple] - 
+A5 = Heading Sensor B = Module Black (FR)  - [Gray]
+A6 = Heading Sensor A = Module Silver (BR) - Back Right (BR)  - [Orange]
+A7 = Heading Sensor B = Module Silver (BR)  - [Yellow]
+
+A8 = Robot Controller Joystick - X axis - [Green]
+A9 = Robot Controller Joystick - Y axis - [Yellow]
+D53 = Robot Controller Joystick - Push Switch - [Orange]
 
 Digital
 D0  - Can't be used -  TX/RX
 D1  - Can't be used -  TX/RX
-D2  - Rotary Encoder Data - Interupt - []
-D3  - Rotary Encoder Clock - Interupt - []
-D4  - Rotary Encoder Switch - []
+D2  - Rotary Encoder Data - Interrupt - [Blue]
+D3  - Rotary Encoder Clock - Interrupt - [Purple]
+D4  - Rotary Encoder Switch - [Gray]
 
 D5  - PWM - Motor Controller - EN-B - Silver (BR)  - Drive - [GRAY]
-D6  - PWM - Motor Controller - EN-A - Blue (FL)  - Heading - []
-D7  - PWM - Motor Controller - EN-B - Blue (FL)  - Drive - []
+D6  - PWM - Motor Controller - EN-A - Blue (FL)  - Heading - [Orange]
+D7  - PWM - Motor Controller - EN-B - Blue (FL)  - Drive - [Gray]
 
 D8  - PWM - Motor Controller - EN-B - White (BL) - Drive - [GRAY]
 D9  - DIO - Motor Controller - IN-4 - White (BL) - Drive - [PURPLE]
@@ -118,21 +124,21 @@ D13 - PWM - Motor Controller - EN-A - White (BL) - Heading - [ORANGE]
 D18 - Interrupt - Motor Encoder - C1 - [BROWN] - White (BL)
 D19 - Interrupt - Motor Encoder - C2 - [WHITE] - White (BL)
 
-D20 - Interrupt - SDA - OLED - [] - Not sure how PINS are identified for i2C
-D21 - Interrupt - SCL - OLED  - []
+D20 - Interrupt - SDA - OLED - [Yellow] - Not sure how PINS are identified for i2C
+D21 - Interrupt - SCL - OLED  - [Green]
 
-D23 - DIO - Motor Controller - IN-1 - Blue (FL) - Heading - []
-D25 - DIO - Motor Controller - IN-2 - Blue (FL) - Heading - []
-D27 - DIO - Motor Controller - IN-3 - Blue (FL) - Drive - []
-D29 - DIO - Motor Controller - IN-4 - Blue (FL) - Drive - []
+D23 - DIO - Motor Controller - IN-1 - Blue (FL) - Heading - [Yellow]
+D25 - DIO - Motor Controller - IN-2 - Blue (FL) - Heading - [Green]
+D27 - DIO - Motor Controller - IN-3 - Blue (FL) - Drive - [Blue]
+D29 - DIO - Motor Controller - IN-4 - Blue (FL) - Drive - [Purple]
 
-D33 - DIO - Motor Controller - IN-1 - Black (FR) - Heading - []
-D35 - DIO - Motor Controller - IN-2 - Black (FR) - Heading - []
-D37 - DIO - Motor Controller - IN-3 - Black (FR) - Drive - []
-D39 - DIO - Motor Controller - IN-4 - Black (FR) - Drive - []
+D33 - DIO - Motor Controller - IN-1 - Black (FR) - Heading - [Yellow]
+D35 - DIO - Motor Controller - IN-2 - Black (FR) - Heading - [Green]
+D37 - DIO - Motor Controller - IN-3 - Black (FR) - Drive - [Blue]
+D39 - DIO - Motor Controller - IN-4 - Black (FR) - Drive - [Purple]
 
-D44 - PWM - Motor Controller - EN-A - Black (FR) - Heading - []
-D46 - PWM - Motor Controller - EN-B - Black (FR) - Drive - []
+D44 - PWM - Motor Controller - EN-A - Black (FR) - Heading - [Orange]
+D46 - PWM - Motor Controller - EN-B - Black (FR) - Drive - [Gray]
 
 D43 - DIO - Motor Controller - IN-1 - Silver  (BR)  - Heading - [ORANGE]
 D45 - PWM - Motor Controller - EN-A - Silver  (BR)  - Heading - [YELLOW]
@@ -140,7 +146,6 @@ D47 - DIO - Motor Controller - IN-2 - Silver  (BR)  - Heading - [GREEN]
 D49 - DIO - Motor Controller - IN-3 - Silver  (BR)  - Drive - [BLUE]
 D51 - DIO - Motor Controller - IN-4 - Silver  (BR)  - Drive - [PURPLE]
 
-D53 = Robot Controller Joystick - Push Switch - []
 
 
 */
@@ -177,16 +182,16 @@ D53 = Robot Controller Joystick - Push Switch - []
 
 
 
-int BL_HeadingSensor_A = A0;
+int BL_HeadingSensor_A = A0;  // White
 int BL_HeadingSensor_B = A1;
-int FL_HeadingSensor_A = A2;
+int FL_HeadingSensor_A = A2;  //  Blue
 int FL_HeadingSensor_B = A3;
-int FR_HeadingSensor_A = A4;
+int FR_HeadingSensor_A = A4;  //  Black
 int FR_HeadingSensor_B = A5;
-int BR_HeadingSensor_A = A6;
-int BR_HeadingSensor_B = A7;
-int joystick_x_axis = A8;
-int joystick_y_axis = A9;
+int BR_HeadingSensor_A = A7; // A6;  // Silver - Wires reversed
+int BR_HeadingSensor_B = A6; //  A7;
+int joystick_x_axis = A9;  // Full Left = 0, Full Right = 1023, middle = 508
+int joystick_y_axis = A8;  // Full forward = 1023, Full back = 0, Middle = 510
 
 // TEMP:  D18 - Interrupt - Motor Encoder - C1 - [BROWN] - White (BL)
 // TEMP:  D19 - Interrupt - Motor Encoder - C2 - [WHITE] - White (BL)
@@ -264,7 +269,7 @@ void loop() {
   //  Enable the debug flag once per second (1000) to print status and loops per second count
   // loop_counter = loop_counter + 1;   // Moved to inside of the loop
   if (millis() > nextTime) {
-    nextTime += 1000;  // Number of milliseconds between prints to monitor
+    nextTime += 4000;  // Number of milliseconds between prints to monitor
     Serial.print("LPS: ");
     Serial.println(loop_counter);
     loop_counter = 0;
@@ -291,8 +296,19 @@ void loop() {
   BL_current_heading = readCurrentHeading(BL_HeadingSensor_A, BL_HeadingSensor_B);  // Update to pass parameters
   BR_current_heading = readCurrentHeading(BR_HeadingSensor_A, BR_HeadingSensor_B);  // Update to pass parameters
 
-  if (debugflag) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
-                                               BL_current_heading, BR_current_heading);
+  if (debugflag && false) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
+                                                        BL_current_heading, BR_current_heading);
+
+  if (debugflag && false) {
+    Serial.print("Headings:  blue FL: ");
+    Serial.print(FL_current_heading);
+    Serial.print(" black FR: ");
+    Serial.print(FR_current_heading);
+    Serial.print(" white BL: ");
+    Serial.print(BL_current_heading);
+    Serial.print(" silver BR: ");
+    Serial.println(BR_current_heading);
+  }
 
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
@@ -322,6 +338,14 @@ void loop() {
     x_control_value = get_joystick_x_control_value();
 
     desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
+
+    if (debugflag && false) {
+
+      Serial.print("Joystick Test: X: ");
+      Serial.print(x_control_value);
+      Serial.print("   y = ");
+      Serial.println(y_control_value);
+    }
 
     set_wheel_heading(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
                       FL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FL_current_heading);
@@ -427,6 +451,19 @@ float calculateHeading(float sensorValueA0, float sensorValueA1) {
     }
   }
   int heading = sensorValueA0Component + sensorValueA1Component;
+
+  // if (debugflag && false) {
+  //   Serial.print();
+  //   Serial.print();
+  //   Serial.print();
+  //   Serial.print();
+  //   Serial.print();
+  //   Serial.print();
+  //   Serial.print();
+  // }
+
+
+
   return heading;
 }
 
@@ -702,8 +739,10 @@ void set_wheel_heading(int ww_steering_motor_direction_A_pin, int ww_steering_mo
     runWheelSteeringMotor(ww_steering_motor_direction_A_pin, ww_steering_motor_direction_B_pin,
                           ww_steering_motor_speed_PWM_pin, 0);
 
-    Serial.print(ww_steering_motor_speed_PWM_pin);
-    Serial.println(" :Reached +/- 170 degree limit");
+    if (debugflag && true) {
+      Serial.print(ww_steering_motor_speed_PWM_pin);
+      Serial.println(" :Reached +/- 170 degree limit");
+    }
   }
 
   // Check to see if within the tolerance window
@@ -901,6 +940,18 @@ bool driveMotorToHome() {  //  Returns true when completed
 float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
   float sensorValueA0 = returnSensor(sensor_name_A);
   float sensorValueA1 = returnSensor(sensor_name_B);
+
+  if (debugflag && true) {
+
+      Serial.print("Calculate heading:  Sensor  A name: ");
+      Serial.print(sensor_name_A);
+      Serial.print("   Sensor  B name: ");
+      Serial.print(sensor_name_B);
+      Serial.print("   Calculated Heading ");
+      Serial.println(calculateHeading(sensorValueA0, sensorValueA1));
+  }
+
+
   return calculateHeading(sensorValueA0, sensorValueA1);
 }
 //------------------------------------------------------------------------
