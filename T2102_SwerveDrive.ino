@@ -268,6 +268,7 @@ void loop() {
     nextTime += 1000;  // Number of milliseconds between prints to monitor
     Serial.print("LPS: ");
     Serial.println(loop_counter);
+    Serial.println("Calling order FL(Blue),    FR(Black),    BL(White),   BR(Silver)");
 
     loop_counter = 0;
     debugflag = true;  // Control printing for debugging
@@ -607,16 +608,27 @@ void RotaryChanged() {
 
 void set_drive_wheel_rotation_direction(String direction, int ww_wheel_rotation_motor_direction_A_pin,
                                         int ww_wheel_rotation_motor_direction_B_pin) {
+
+
+    if (debugflag && true) { 
+      Serial.print("Control Pins: "); 
+      Serial.print(" "); 
+      Serial.print(ww_wheel_rotation_motor_direction_A_pin); 
+      Serial.print(" "); 
+      Serial.println(ww_wheel_rotation_motor_direction_B_pin); 
+      }
+
+
   if (direction == "forward") {
     digitalWrite(ww_wheel_rotation_motor_direction_A_pin, HIGH);
     digitalWrite(ww_wheel_rotation_motor_direction_B_pin, LOW);
 
-    // if (debugflag && false) { Serial.print("Forward "); }
+    if (debugflag && true) { Serial.print("Forward "); }
 
   } else if (direction == "reverse") {
     digitalWrite(ww_wheel_rotation_motor_direction_A_pin, LOW);
     digitalWrite(ww_wheel_rotation_motor_direction_B_pin, HIGH);
-    // if (debugflag && false) { Serial.print("Reverse "); }
+    if (debugflag && true) { Serial.print("Reverse "); }
   } else {
     Serial.println("Error in direction selection");
   }
@@ -656,7 +668,8 @@ float calculate_motor_speed_value(int y_control_value) {
 
     // Reverse movement >> input range 0 to 510 >> output range 254 to 0
   } else if (y_control_value < (joystick_y_middle_value - joystick_deadzone)) {
-    local_motor_speed = map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // ERROR???
+    local_motor_speed = 0 - map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // ERROR???
+    // local_motor_speed = map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // ERROR???
     // FL_motor_speed = map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // Updated
     //    Serial.print (" Reverse> ");
 
@@ -666,10 +679,10 @@ float calculate_motor_speed_value(int y_control_value) {
   }
 
   if (debugflag && false) {
-    //  Serial.print ("Y Axis:   Analog In: ");
-    //  Serial.print (y_control_value);
-    //  Serial.print ("  Mapped:");
-    //  Serial.println (local_motor_speed);
+     Serial.print ("calculate_motor_speed_value - Y Axis:   Analog In: ");
+     Serial.print (y_control_value);
+     Serial.print ("  Mapped:");
+     Serial.println (local_motor_speed);
   }
   return local_motor_speed;
 }
@@ -693,9 +706,8 @@ void set_wheel_speed(int ww_wheel_rotation_motor_direction_A_pin, int ww_wheel_r
 
 
   if (debugflag && false) {
-    Serial.print("Y Axis:   Analog In: ");
-    Serial.print(y_control_value);
-    Serial.print("  Mapped:");
+
+    Serial.print("set_wheel_speed   Local motor speed:");
     Serial.println(local_motor_speed);
   }
 }
