@@ -184,8 +184,8 @@ int FL_HeadingSensor_A = A3;  // A2;  //  Blue
 int FL_HeadingSensor_B = A2;  // A3;
 int FR_HeadingSensor_A = A5;  // A4;  //  Black
 int FR_HeadingSensor_B = A4;  // A5;
-int BR_HeadingSensor_A = A6;  // Silver -
-int BR_HeadingSensor_B = A7;  //
+int BR_HeadingSensor_A = A7;  // Silver -
+int BR_HeadingSensor_B = A6;  //
 int joystick_x_axis = A9;     // Full Left = 0, Full Right = 1023, middle = 508
 int joystick_y_axis = A8;     // Full forward = 1023, Full back = 0, Middle = 510
 
@@ -265,10 +265,10 @@ void loop() {
   //  Enable the debug flag once per second (1000) to print status and loops per second count
   // loop_counter = loop_counter + 1;   // Moved to inside of the loop
   if (millis() > nextTime) {
-    nextTime += 1000;  // Number of milliseconds between prints to monitor
-    Serial.print("LPS: ");
-    Serial.println(loop_counter);
-    Serial.println("Calling order FL(Blue),    FR(Black),    BL(White),   BR(Silver)");
+    nextTime += 5000;  // Number of milliseconds between prints to monitor
+    // Serial.print("LPS: ");
+    // Serial.println(loop_counter);
+    // Serial.println("Calling order FL(Blue),    FR(Black),    BL(White),   BR(Silver)");
 
     loop_counter = 0;
     debugflag = true;  // Control printing for debugging
@@ -294,27 +294,27 @@ void loop() {
   BL_current_heading = readCurrentHeading(BL_HeadingSensor_A, BL_HeadingSensor_B);  // Update to pass parameters
   BR_current_heading = readCurrentHeading(BR_HeadingSensor_A, BR_HeadingSensor_B);  // Update to pass parameters
 
-  if (debugflag && false) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
-                                                        BL_current_heading, BR_current_heading);
+  if (debugflag && true) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
+                                                       BL_current_heading, BR_current_heading);
 
-  // if (debugflag && false) {
-  //   Serial.print("Headings:  blue FL: ");
-  //   Serial.print(FL_current_heading);
-  //   Serial.print(" black FR: ");
-  //   Serial.print(FR_current_heading);
-  //   Serial.print(" white BL: ");
-  //   Serial.print(BL_current_heading);
-  //   Serial.print(" silver BR: ");
-  //   Serial.println(BR_current_heading);
-  // }
+  if (debugflag && true) {
+    Serial.print("Headings:  blue FL: ");
+    Serial.print(FL_current_heading);
+    Serial.print(" black FR: ");
+    Serial.print(FR_current_heading);
+    Serial.print(" white BL: ");
+    Serial.print(BL_current_heading);
+    Serial.print(" silver BR: ");
+    Serial.println(BR_current_heading);
+  }
 
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
   motor_speed = calculate_motor_speed_value(y_control_value);
   FL_motor_speed = motor_speed;  //  FIRST CUT - MAKE ALL WHEELS TURN AT THE SAME SPEED
-  FR_motor_speed = motor_speed;
-  BL_motor_speed = motor_speed;
-  BR_motor_speed = motor_speed;
+  // FR_motor_speed = motor_speed;
+  // BL_motor_speed = motor_speed;
+  // BR_motor_speed = motor_speed;
 
   set_wheel_speed(FL_wheel_rotation_motor_direction_A_pin, FL_wheel_rotation_motor_direction_B_pin,
                   FL_wheel_rotation_motor_speed_PWM_pin, FL_motor_speed);
@@ -337,13 +337,12 @@ void loop() {
 
     desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
 
-    // if (debugflag && true) {
-
-    //   Serial.print("Joystick Test: X: ");
-    //   Serial.print(x_control_value);
-    //   Serial.print("   y = ");
-    //   Serial.println(y_control_value);
-    // }
+    if (debugflag && false) {
+      Serial.print("Joystick Test: X: ");
+      Serial.print(x_control_value);
+      Serial.print("   y = ");
+      Serial.println(y_control_value);
+    }
 
     set_wheel_heading(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
                       FL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FL_current_heading);
@@ -610,25 +609,25 @@ void set_drive_wheel_rotation_direction(String direction, int ww_wheel_rotation_
                                         int ww_wheel_rotation_motor_direction_B_pin) {
 
 
-    if (debugflag && true) { 
-      Serial.print("Control Pins: "); 
-      Serial.print(" "); 
-      Serial.print(ww_wheel_rotation_motor_direction_A_pin); 
-      Serial.print(" "); 
-      Serial.println(ww_wheel_rotation_motor_direction_B_pin); 
-      }
+  if (debugflag && false) {
+    Serial.print("Control Pins: ");
+    Serial.print(" ");
+    Serial.print(ww_wheel_rotation_motor_direction_A_pin);
+    Serial.print(" ");
+    Serial.println(ww_wheel_rotation_motor_direction_B_pin);
+  }
 
 
   if (direction == "forward") {
     digitalWrite(ww_wheel_rotation_motor_direction_A_pin, HIGH);
     digitalWrite(ww_wheel_rotation_motor_direction_B_pin, LOW);
 
-    if (debugflag && true) { Serial.print("Forward "); }
+    if (debugflag && false) { Serial.print("Forward "); }
 
   } else if (direction == "reverse") {
     digitalWrite(ww_wheel_rotation_motor_direction_A_pin, LOW);
     digitalWrite(ww_wheel_rotation_motor_direction_B_pin, HIGH);
-    if (debugflag && true) { Serial.print("Reverse "); }
+    if (debugflag && false) { Serial.print("Reverse "); }
   } else {
     Serial.println("Error in direction selection");
   }
@@ -679,10 +678,10 @@ float calculate_motor_speed_value(int y_control_value) {
   }
 
   if (debugflag && false) {
-     Serial.print ("calculate_motor_speed_value - Y Axis:   Analog In: ");
-     Serial.print (y_control_value);
-     Serial.print ("  Mapped:");
-     Serial.println (local_motor_speed);
+    Serial.print("calculate_motor_speed_value - Y Axis:   Analog In: ");
+    Serial.print(y_control_value);
+    Serial.print("  Mapped:");
+    Serial.println(local_motor_speed);
   }
   return local_motor_speed;
 }
@@ -975,30 +974,47 @@ bool driveMotorToHome() {  //  Returns true when completed
 
 // Reads the raw values for the two rotational position sensors
 float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
+  float local_current_heading = 0;
   float sensorValueA0 = returnSensor(sensor_name_A);
   float sensorValueA1 = returnSensor(sensor_name_B);
 
+  local_current_heading = calculateHeading(sensorValueA0, sensorValueA1);
+
   if (debugflag && false) {
-    // Serial.println(" ");
-
-
     if (sensor_name_A == 56) Serial.print("Blue   - FL - ");
     if (sensor_name_A == 58) Serial.print("Black  - FR - ");
     if (sensor_name_A == 54) Serial.print("White  - BL - ");
     if (sensor_name_A == 60) Serial.print("Silver - BR - ");
 
-
+    // local_current_heading = calculateHeading(sensorValueA0, sensorValueA1);
 
     Serial.print(" Sensor  A name: ");
     Serial.print(sensor_name_A);
     Serial.print(" Sensor  B name: ");
     Serial.print(sensor_name_B);
     Serial.print("   Calculated Heading ");
-    Serial.println(calculateHeading(sensorValueA0, sensorValueA1));
+    Serial.println(local_current_heading);
   }
 
+  add_wheel_specific_offset_to_angle(sensor_name_B, local_current_heading);
 
-  return calculateHeading(sensorValueA0, sensorValueA1);
+  if (debugflag && false) {
+    if (sensor_name_A == 56) Serial.print("Blue   - FL - ");
+    if (sensor_name_A == 58) Serial.print("Black  - FR - ");
+    if (sensor_name_A == 54) Serial.print("White  - BL - ");
+    if (sensor_name_A == 60) Serial.print("Silver - BR - ");
+
+    // local_current_heading = calculateHeading(sensorValueA0, sensorValueA1);
+
+    Serial.print(" Sensor  A name: ");
+    Serial.print(sensor_name_A);
+    Serial.print(" Sensor  B name: ");
+    Serial.print(sensor_name_B);
+    Serial.print(" Updated  Calculated Heading ");
+    Serial.println(local_current_heading);
+  }
+
+  return local_current_heading;
 }
 //------------------------------------------------------------------------
 
@@ -1012,6 +1028,51 @@ bool home_wheels_when_joystick_pressed() {
   return homeWheel;
 }
 //------------------------------------------------------------------------
+
+/*
+Adds an offset to the wheel angle since the sensors are at different angles
+
+*/
+
+float add_wheel_specific_offset_to_angle(int sensor_name, float raw_offset_angle) {
+  float offset_angle = 1;
+  float corrected_angle = 0;
+  if (sensor_name == 56) {
+    offset_angle = -180;  // Blue   - FL
+    corrected_angle = raw_offset_angle + offset_angle;
+    if (corrected_angle >= 180) corrected_angle = corrected_angle - 180;
+    if (corrected_angle < -180) corrected_angle = corrected_angle + 180;
+  }
+  if (sensor_name == 58) {
+    offset_angle = -90;  // Black  - FR -
+    corrected_angle = raw_offset_angle + offset_angle;
+    if (corrected_angle >= 180) corrected_angle = corrected_angle - 180;
+    if (corrected_angle < -180) corrected_angle = corrected_angle + 180;
+  }
+  if (sensor_name == 54) {
+    offset_angle = 90;  // White  - BL
+    corrected_angle = raw_offset_angle + offset_angle;
+    if (corrected_angle >= 180) corrected_angle = corrected_angle - 180;
+    if (corrected_angle < -180) corrected_angle = corrected_angle + 180;
+  }
+  if (sensor_name == 60) {
+    offset_angle = 0;  // Silver - BR - Zero Reference - Gear inboard
+    corrected_angle = raw_offset_angle + offset_angle;
+  }
+
+  //  CCW is Negative - CW is Positive
+
+  if (debugflag && true) {
+    Serial.print("Original Angle: ");
+    Serial.print(raw_offset_angle);
+    Serial.print("     Offset Angle: ");
+    Serial.print(offset_angle);
+    Serial.print("     Corredted Angle: ");
+    Serial.println(corrected_angle);
+  }
+
+  return corrected_angle;
+}
 
 //------------------------------------------------------------------------
 
