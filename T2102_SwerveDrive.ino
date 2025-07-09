@@ -1,11 +1,11 @@
 //  June 30, 2025  17:30
 //
 #include <Arduino.h>
-#include <Adafruit_SSD1306.h>
-#define OLED_ADDR 0x3C  // Replace with your OLED's I2C address
+//// #include <Adafruit_SSD1306.h>
+//// #define OLED_ADDR 0x3C  // Replace with your OLED's I2C address
 #include "RotaryEncoder.h"
 
-Adafruit_SSD1306 display(OLED_ADDR);
+//// Adafruit_SSD1306 display(OLED_ADDR);
 
 int FL_sensorValueA0 = 0;
 int FL_sensorValueA1 = 0;
@@ -192,23 +192,23 @@ D51 - DIO - Motor Controller - IN-4 - Silver  (BR)  - Drive - [PURPLE]
 // A1 = Heading Sensor A = Module White (BL) - [Brown]
 // A2 = Heading Sensor B = Module Blue (FL) - Front Left (FL) - [Blue]   - Bottom sensor
 // A3 = Heading Sensor A = Module Blue (FL)  - [Green]
-// A4 = Heading Sensor B = Module Black (FR) - Front Right (FR)  - [Purple]  - Bottom sensor 
+// A4 = Heading Sensor B = Module Black (FR) - Front Right (FR)  - [Purple]  - Bottom sensor
 // A5 = Heading Sensor A = Module Black (FR)  - [Gray]
 // A6 = Heading Sensor B = Module Silver (BR) - Back Right (BR)  - [Yellow]
 // A7 = Heading Sensor A = Module Silver (BR)  - [Orange] - Bottom sensor
 
 
-int BL_HeadingSensor_A = A1;  // [brown]   //  White corner
-int BL_HeadingSensor_B = A0;  // [red]     - long wire - lower sensor
-int FL_HeadingSensor_A = A3;  // [green]   //  Blue corner
-int FL_HeadingSensor_B = A2;  // [blue]    - long wire - lower sensor
-int FR_HeadingSensor_A = A5;  // [gray]    //  Black corner
-int FR_HeadingSensor_B = A4;  // [purple]  - long wire - lower sensor
-int BR_HeadingSensor_A = A7;  // [orange]  //  Silver corner
-int BR_HeadingSensor_B = A6;  // [yellow]  - long wire - lower sensor
+int BL_HeadingSensor_B = A0;  // 54 [red]     - long wire - lower sensor
+int BL_HeadingSensor_A = A1;  // 55 [brown]   //  White corner
+int FL_HeadingSensor_B = A2;  // 56 [blue]    - long wire - lower sensor
+int FL_HeadingSensor_A = A3;  // 57 [green]   //  Blue corner
+int FR_HeadingSensor_B = A4;  // 58 [purple]  - long wire - lower sensor
+int FR_HeadingSensor_A = A5;  // 59 [gray]    //  Black corner
+int BR_HeadingSensor_B = A6;  // 60 [yellow]  - long wire - lower sensor
+int BR_HeadingSensor_A = A7;  // 61 [orange]  //  Silver corner
 
-int joystick_x_axis = A9;     // Full Left = 0, Full Right = 1023, middle = 508
-int joystick_y_axis = A8;     // Full forward = 1023, Full back = 0, Middle = 510
+int joystick_x_axis = A9;  // Full Left = 0, Full Right = 1023, middle = 508
+int joystick_y_axis = A8;  // Full forward = 1023, Full back = 0, Middle = 510
 
 // TEMP:  D18 - Interrupt - Motor Encoder - C1 - [BROWN] - White (BL)
 // TEMP:  D19 - Interrupt - Motor Encoder - C2 - [WHITE] - White (BL)
@@ -270,7 +270,7 @@ int lastEncoded = 0;          // Used to track last encoder state
 
 void setup() {
   Serial.begin(9600);
-  initializeDisplay();
+  //// initializeDisplay();
   configure_pins();
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -286,7 +286,7 @@ void loop() {
   //  Enable the debug flag once per second (1000) to print status and loops per second count
   // loop_counter = loop_counter + 1;   // Moved to inside of the loop
   if (millis() > nextTime) {
-    nextTime += 5000;  // Number of milliseconds between prints to monitor
+    nextTime += 1000;  // Number of milliseconds between prints to monitor
     // Serial.print("LPS: ");
     // Serial.println(loop_counter);
     // Serial.println("Calling order FL(Blue),    FR(Black),    BL(White),   BR(Silver)");
@@ -315,8 +315,9 @@ void loop() {
   BL_current_heading = readCurrentHeading(BL_HeadingSensor_A, BL_HeadingSensor_B);  // Update to pass parameters
   BR_current_heading = readCurrentHeading(BR_HeadingSensor_A, BR_HeadingSensor_B);  // Update to pass parameters
 
-  if (debugflag && true) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
-                                                       BL_current_heading, BR_current_heading);
+  ////
+  // if (debugflag && false) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
+  //                                                      BL_current_heading, BR_current_heading);
 
   if (debugflag && true) {
     Serial.println("");
@@ -402,15 +403,15 @@ void loop() {
 }
 //========================================================================
 
-// Initialize the OLED Display
-void initializeDisplay() {
-  display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);  // Initialize the display
-  display.clearDisplay();                          // Clear the display
-  display.setTextColor(WHITE);                     // Set text color
-  display.setTextSize(2);                          // Set text size (Was 2)
-  display.clearDisplay();                          // Clear the display
-  delay(100);                                      // Wait for 2 seconds
-}
+//// Initialize the OLED Display
+// void initializeDisplay() {
+//   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);  // Initialize the display
+//   display.clearDisplay();                          // Clear the display
+//   display.setTextColor(WHITE);                     // Set text color
+//   display.setTextSize(2);                          // Set text size (Was 2)
+//   display.clearDisplay();                          // Clear the display
+//   delay(100);                                      // Wait for 2 seconds
+// }
 
 //------------------------------------------------------------------------
 
@@ -424,37 +425,39 @@ float returnSensor(int sensorPin) {
   Displays heading and raw sensors values (disabled) on the OLED.  SLOW
   (FL_current_heading, FR_current_heading, BL_current_heading, BR_current_heading );
 */
-void displaySensorValuesAndHeading(float FL_current_heading, float FR_current_heading,
-                                   float BL_current_heading, float BR_current_heading) {
+//// void displaySensorValuesAndHeading(float FL_current_heading, float FR_current_heading,
+//                                    float BL_current_heading, float BR_current_heading) {
 
-  String sensorValuesString = "";
-  String headingString = "";
+//   String sensorValuesString = "";
+//   String headingString = "";
 
-  headingString = "Heading: " + String(FL_current_heading) + "  "
-                  + String(FR_current_heading) + "  "
-                  + String(BL_current_heading) + "  "
-                  + String(BR_current_heading);
-  display.setCursor(0, 0);       // Set cursor position
-  display.print(headingString);  // Print text
+//   headingString = "Heading: " + String(FL_current_heading) + "  "
+//                   + String(FR_current_heading) + "  "
+//                   + String(BL_current_heading) + "  "
+//                   + String(BR_current_heading);
+//   display.setCursor(0, 0);       // Set cursor position
+//   display.print(headingString);  // Print text
 
-  //  display.setCursor(0, 17); // Set cursor position on next line
+//   //  display.setCursor(0, 17); // Set cursor position on next line
 
-  display.display();       // Update the display
-  delay(10);               //
-  display.clearDisplay();  // Clear the display
-  delay(1);                //
-}
+//   display.display();       // Update the display
+//   delay(10);               //
+//   display.clearDisplay();  // Clear the display
+//   delay(1);                //
+// }
 
 //------------------------------------------------------------------------
+
+// local_current_heading = calculateHeading(sensor_name_A, sensorValueA0, sensor_name_B, sensorValueA1 );
 
 /*
   Calculate the heading of the wheel based on two rotational position sensors.
   Need two sensors to cover the 30 degree blank segment
 */
-float calculateHeading(float sensorValueA0, float sensorValueA1) {   // original
+float calculateHeading(int sensor_name_A, float sensorValueA0, int sensor_name_B, float sensorValueA1) {  // original
   int lowThreshold = 200;
   int highThreshold = 760;
-  float lineSlope = 0.342205323;   // 350 degrees divided by 1023 ADC units
+  float lineSlope = 0.342205323;  // 350 degrees divided by 1023 ADC units
   float lineIntercept = 169;
 
   float sensorValueA0Component = 0;
@@ -468,15 +471,21 @@ float calculateHeading(float sensorValueA0, float sensorValueA1) {   // original
     //  Using mid range of Sensor on A1 for the wheel heading of 90 to 180 and -90 to -180
     sensorValueA0Component = 0;
 
-    if (sensorValueA1 < 500) {                                    ///  FIX THIS
-      sensorValueA1Component = lineSlope * sensorValueA1 + 12.66;
-    } else {
-      sensorValueA1Component = lineSlope * sensorValueA1 - 351.1;
-    }
+    // sensorValueA1Component = lineSlope * sensorValueA1 + 12.66;
+    sensorValueA1Component = - lineSlope * sensorValueA1 + 351.1;  // silver
+    if (sensorValueA1Component > 180) sensorValueA1Component = sensorValueA1Component - 360; // silver  SA=61
+
+
+    // if (sensorValueA1 > 500) {                                    ///  FIX THIS
+    // if (sensorValueA1 < 500) {                                    ///  FIX THIS  original
+    //   sensorValueA1Component = lineSlope * sensorValueA1 + 12.66;
+    // } else {
+    //   sensorValueA1Component = lineSlope * sensorValueA1 - 351.1;
+    // }
   }
   int heading = sensorValueA0Component + sensorValueA1Component;
 
-  if (debugflag && false) {
+  if (debugflag && true && (sensor_name_A == 59)) {  // 61=silver, 55=white, 57 = blue, 59 = black
 
     // Serial.print(" [Silver]BR: ");
     // Serial.print(analogRead(A6));
@@ -484,10 +493,15 @@ float calculateHeading(float sensorValueA0, float sensorValueA1) {   // original
     // Serial.print(analogRead(A7));
     // Serial.println(" ");
 
-    Serial.print("Sensor values: ");
+    Serial.print("Sensor A Name: ");
+    Serial.print(sensor_name_A);
+    Serial.print(" = ");
     Serial.print(sensorValueA0);
-    Serial.print(" ");
+    Serial.print("   Sensor B Name: ");
+    Serial.print(sensor_name_B);
+    Serial.print(" = ");
     Serial.print(sensorValueA1);
+    Serial.print(" ");
     Serial.print("    A0 Comp: ");
     Serial.print(sensorValueA0Component);
     Serial.print("    A1 Comp: ");
@@ -999,7 +1013,7 @@ float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
   float sensorValueA0 = returnSensor(sensor_name_A);
   float sensorValueA1 = returnSensor(sensor_name_B);
 
-  local_current_heading = calculateHeading(sensorValueA0, sensorValueA1);
+  local_current_heading = calculateHeading(sensor_name_A, sensorValueA0, sensor_name_B, sensorValueA1);
 
   if (debugflag && false) {
     if (sensor_name_A == 56) Serial.print("Blue   - FL - ");
@@ -1007,7 +1021,6 @@ float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
     if (sensor_name_A == 54) Serial.print("White  - BL - ");
     if (sensor_name_A == 60) Serial.print("Silver - BR - ");
 
-    // local_current_heading = calculateHeading(sensorValueA0, sensorValueA1);
 
     Serial.print(" Sensor  A name: ");
     Serial.print(sensor_name_A);
@@ -1019,23 +1032,22 @@ float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
 
   add_wheel_specific_offset_to_angle(sensor_name_B, local_current_heading);
 
-  if (debugflag && true && (sensor_name_B == 60)) {
+  if (debugflag && false && (sensor_name_B == 60)) {
     if (sensor_name_A == 56) Serial.print("Blue   - FL - ");
     if (sensor_name_A == 58) Serial.print("Black  - FR - ");
     if (sensor_name_A == 54) Serial.print("White  - BL - ");
     if (sensor_name_A == 60) Serial.print("Silver - BR - ");
 
-    // local_current_heading = calculateHeading(sensorValueA0, sensorValueA1);
 
     Serial.print(" Sensor  A name: ");
     Serial.print(sensor_name_A);
     Serial.print(" = ");
-    Serial.print( sensorValueA0);
+    Serial.print(sensorValueA0);
 
     Serial.print(" Sensor  B name: ");
     Serial.print(sensor_name_B);
     Serial.print(" = ");
-    Serial.print( sensorValueA1);
+    Serial.print(sensorValueA1);
     Serial.print(" Updated  Calculated Heading ");
     Serial.println(local_current_heading);
   }
@@ -1088,12 +1100,12 @@ float add_wheel_specific_offset_to_angle(int sensor_name, float raw_offset_angle
 
   //  CCW is Negative - CW is Positive
 
-  if (debugflag && true) {
+  if (debugflag && false) {
     Serial.print("Original Angle: ");
     Serial.print(raw_offset_angle);
     Serial.print("     Offset Angle: ");
     Serial.print(offset_angle);
-    Serial.print("     Corredted Angle: ");
+    Serial.print("     Corrected Angle: ");
     Serial.println(corrected_angle);
   }
 
