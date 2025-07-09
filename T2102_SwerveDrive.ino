@@ -86,18 +86,30 @@ UPDATED:
   Rotate left is Positive 0 to +180, 
   Rotate to the right is Negative 0 to -180
 
-A0 = Heading Sensor A = Module White (BL) - Back Left (BL)  - [Red]  
-A1 = Heading Sensor B = Module White (BL) - [Brown]
-A2 = Heading Sensor A = Module Blue (FL) - Front Left (FL) - [Blue]  
-A3 = Heading Sensor B = Module Blue (FL)  - [Green]
-A4 = Heading Sensor A = Module Black (FR) - Front Right (FR)  - [Purple] - 
-A5 = Heading Sensor B = Module Black (FR)  - [Gray]
-A6 = Heading Sensor A = Module Silver (BR) - Back Right (BR)  - [Orange]
-A7 = Heading Sensor B = Module Silver (BR)  - [Yellow]
+A0 = Heading Sensor B = Module White (BL) - Back Left (BL)  - [Red]   - Bottom sensor
+A1 = Heading Sensor A = Module White (BL) - [Brown]
+A2 = Heading Sensor B = Module Blue (FL) - Front Left (FL) - [Blue]   - Bottom sensor
+A3 = Heading Sensor A = Module Blue (FL)  - [Green]
+A4 = Heading Sensor B = Module Black (FR) - Front Right (FR)  - [Purple]  - Bottom sensor 
+A5 = Heading Sensor A = Module Black (FR)  - [Gray]
+A6 = Heading Sensor B = Module Silver (BR) - Back Right (BR)  - [Yellow]
+A7 = Heading Sensor A = Module Silver (BR)  - [Orange] - Bottom sensor
 
 A8 = Robot Controller Joystick - X axis - [Green]
 A9 = Robot Controller Joystick - Y axis - [Yellow]
 D53 = Robot Controller Joystick - Push Switch - [Orange]
+
+Notes on Sensors:
+There is a tiny notch on the potentiometer
+When the flat side of  the openning is nearest to the three wires AND the notch is just off 
+center Clockwise call this zero reference
+Degrees:   Bottom sensor:   Top Sensor:
+ ~5         0               467
+  90        248             221
+  180       490             0
+  270       774             703
+ ~355       1023            533
+
 
 Digital
 D0  - Can't be used -  TX/RX
@@ -176,16 +188,25 @@ D51 - DIO - Motor Controller - IN-4 - Silver  (BR)  - Drive - [PURPLE]
 
 //- - (Name to Pin Assignments) - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+// A0 = Heading Sensor B = Module White (BL) - Back Left (BL)  - [Red]   - Bottom sensor
+// A1 = Heading Sensor A = Module White (BL) - [Brown]
+// A2 = Heading Sensor B = Module Blue (FL) - Front Left (FL) - [Blue]   - Bottom sensor
+// A3 = Heading Sensor A = Module Blue (FL)  - [Green]
+// A4 = Heading Sensor B = Module Black (FR) - Front Right (FR)  - [Purple]  - Bottom sensor 
+// A5 = Heading Sensor A = Module Black (FR)  - [Gray]
+// A6 = Heading Sensor B = Module Silver (BR) - Back Right (BR)  - [Yellow]
+// A7 = Heading Sensor A = Module Silver (BR)  - [Orange] - Bottom sensor
 
 
-int BL_HeadingSensor_A = A1;  // A0;  // White
-int BL_HeadingSensor_B = A0;  // A1;
-int FL_HeadingSensor_A = A3;  // A2;  //  Blue
-int FL_HeadingSensor_B = A2;  // A3;
-int FR_HeadingSensor_A = A5;  // A4;  //  Black
-int FR_HeadingSensor_B = A4;  // A5;
-int BR_HeadingSensor_A = A7;  // Silver -
-int BR_HeadingSensor_B = A6;  //
+int BL_HeadingSensor_A = A1;  // [brown]   //  White corner
+int BL_HeadingSensor_B = A0;  // [red]     - long wire - lower sensor
+int FL_HeadingSensor_A = A3;  // [green]   //  Blue corner
+int FL_HeadingSensor_B = A2;  // [blue]    - long wire - lower sensor
+int FR_HeadingSensor_A = A5;  // [gray]    //  Black corner
+int FR_HeadingSensor_B = A4;  // [purple]  - long wire - lower sensor
+int BR_HeadingSensor_A = A7;  // [orange]  //  Silver corner
+int BR_HeadingSensor_B = A6;  // [yellow]  - long wire - lower sensor
+
 int joystick_x_axis = A9;     // Full Left = 0, Full Right = 1023, middle = 508
 int joystick_y_axis = A8;     // Full forward = 1023, Full back = 0, Middle = 510
 
@@ -298,6 +319,7 @@ void loop() {
                                                        BL_current_heading, BR_current_heading);
 
   if (debugflag && true) {
+    Serial.println("");
     Serial.print("Headings:  blue FL: ");
     Serial.print(FL_current_heading);
     Serial.print(" black FR: ");
@@ -429,11 +451,10 @@ void displaySensorValuesAndHeading(float FL_current_heading, float FR_current_he
   Calculate the heading of the wheel based on two rotational position sensors.
   Need two sensors to cover the 30 degree blank segment
 */
-float calculateHeading(float sensorValueA0, float sensorValueA1) {
-
+float calculateHeading(float sensorValueA0, float sensorValueA1) {   // original
   int lowThreshold = 200;
   int highThreshold = 760;
-  float lineSlope = 0.342205323;
+  float lineSlope = 0.342205323;   // 350 degrees divided by 1023 ADC units
   float lineIntercept = 169;
 
   float sensorValueA0Component = 0;
@@ -447,7 +468,7 @@ float calculateHeading(float sensorValueA0, float sensorValueA1) {
     //  Using mid range of Sensor on A1 for the wheel heading of 90 to 180 and -90 to -180
     sensorValueA0Component = 0;
 
-    if (sensorValueA1 < 500) {
+    if (sensorValueA1 < 500) {                                    ///  FIX THIS
       sensorValueA1Component = lineSlope * sensorValueA1 + 12.66;
     } else {
       sensorValueA1Component = lineSlope * sensorValueA1 - 351.1;
@@ -998,7 +1019,7 @@ float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
 
   add_wheel_specific_offset_to_angle(sensor_name_B, local_current_heading);
 
-  if (debugflag && false) {
+  if (debugflag && true && (sensor_name_B == 60)) {
     if (sensor_name_A == 56) Serial.print("Blue   - FL - ");
     if (sensor_name_A == 58) Serial.print("Black  - FR - ");
     if (sensor_name_A == 54) Serial.print("White  - BL - ");
@@ -1008,8 +1029,13 @@ float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
 
     Serial.print(" Sensor  A name: ");
     Serial.print(sensor_name_A);
+    Serial.print(" = ");
+    Serial.print( sensorValueA0);
+
     Serial.print(" Sensor  B name: ");
     Serial.print(sensor_name_B);
+    Serial.print(" = ");
+    Serial.print( sensorValueA1);
     Serial.print(" Updated  Calculated Heading ");
     Serial.println(local_current_heading);
   }
@@ -1038,22 +1064,22 @@ float add_wheel_specific_offset_to_angle(int sensor_name, float raw_offset_angle
   float offset_angle = 1;
   float corrected_angle = 0;
   if (sensor_name == 56) {
-    offset_angle = -180;  // Blue   - FL
+    offset_angle = 180;  // Blue   - FL
     corrected_angle = raw_offset_angle + offset_angle;
-    if (corrected_angle >= 180) corrected_angle = corrected_angle - 180;
-    if (corrected_angle < -180) corrected_angle = corrected_angle + 180;
+    if (corrected_angle >= 180) corrected_angle = corrected_angle - 360;
+    // if (corrected_angle < -180) corrected_angle = corrected_angle + 180;
   }
   if (sensor_name == 58) {
     offset_angle = -90;  // Black  - FR -
     corrected_angle = raw_offset_angle + offset_angle;
-    if (corrected_angle >= 180) corrected_angle = corrected_angle - 180;
-    if (corrected_angle < -180) corrected_angle = corrected_angle + 180;
+    // if (corrected_angle >= 180) corrected_angle = corrected_angle - 180;
+    if (corrected_angle <= -180) corrected_angle = corrected_angle + 360;
   }
   if (sensor_name == 54) {
     offset_angle = 90;  // White  - BL
     corrected_angle = raw_offset_angle + offset_angle;
-    if (corrected_angle >= 180) corrected_angle = corrected_angle - 180;
-    if (corrected_angle < -180) corrected_angle = corrected_angle + 180;
+    if (corrected_angle >= 180) corrected_angle = corrected_angle - 360;
+    // if (corrected_angle < -180) corrected_angle = corrected_angle + 180;
   }
   if (sensor_name == 60) {
     offset_angle = 0;  // Silver - BR - Zero Reference - Gear inboard
