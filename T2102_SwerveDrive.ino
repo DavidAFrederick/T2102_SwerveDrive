@@ -1,5 +1,11 @@
-//  June 30, 2025  17:30
-//
+//  July 9, 2025  17:30
+/*
+Problems:
+The OLED code is breaking A6 Heading Sensor.
+Disabled to resolve this issue
+
+*/
+
 #include <Arduino.h>
 //// #include <Adafruit_SSD1306.h>
 //// #define OLED_ADDR 0x3C  // Replace with your OLED's I2C address
@@ -55,14 +61,9 @@ float BR_desired_wheel_heading_value = 0;
 int loop_counter = 0;
 long nextTime = 0;
 
-// int temp_FL_motor_speed = 60;
-// int temp_FL_motor_speed_increment = +1;
 bool debugflag = false;
 bool homeWheel = false;
-// bool FL_homeWheel = false;
-// bool FR_homeWheel = false;
-// bool BL_homeWheel = false;
-// bool BR_homeWheel = false;
+
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 /*
@@ -82,6 +83,7 @@ Analog 8
 Analog           Calling order FL(Blue),    FR(Black),    BL(White),   BR(Silver)
     When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90.
     When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right.
+
 UPDATED:
   Rotate left is Positive 0 to +180, 
   Rotate to the right is Negative 0 to -180
@@ -154,8 +156,6 @@ D47 - DIO - Motor Controller - IN-2 - Silver  (BR)  - Heading - [GREEN]
 D49 - DIO - Motor Controller - IN-3 - Silver  (BR)  - Drive - [BLUE]
 D51 - DIO - Motor Controller - IN-4 - Silver  (BR)  - Drive - [PURPLE]
 
-
-
 */
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -197,7 +197,6 @@ D51 - DIO - Motor Controller - IN-4 - Silver  (BR)  - Drive - [PURPLE]
 // A6 = Heading Sensor B = Module Silver (BR) - Back Right (BR)  - [Yellow]
 // A7 = Heading Sensor A = Module Silver (BR)  - [Orange] - Bottom sensor
 
-
 int BL_HeadingSensor_B = A0;  // 54 [red]     - long wire - lower sensor
 int BL_HeadingSensor_A = A1;  // 55 [brown]   //  White corner
 int FL_HeadingSensor_B = A2;  // 56 [blue]    - long wire - lower sensor
@@ -207,7 +206,7 @@ int FR_HeadingSensor_A = A5;  // 59 [gray]    //  Black corner
 int BR_HeadingSensor_B = A6;  // 60 [yellow]  - long wire - lower sensor
 int BR_HeadingSensor_A = A7;  // 61 [orange]  //  Silver corner
 
-int joystick_x_axis = A9;  // Full Left = 0, Full Right = 1023, middle = 508
+int joystick_x_axis = A11;  // Full Left = 0, Full Right = 1023, middle = 508
 int joystick_y_axis = A8;  // Full forward = 1023, Full back = 0, Middle = 510
 
 // TEMP:  D18 - Interrupt - Motor Encoder - C1 - [BROWN] - White (BL)
@@ -221,22 +220,21 @@ const int rotary_encoder_switch_pin = 4;  //+ D4
 
 const int joystickSwitch_pin = 53;  // D
 
-
 const int BL_rotation_motor_encoder_A_pin = 19;  //+  (supports interupts) - Only White (BL) - One wheel
 const int BL_rotation_motor_encoder_B_pin = 18;  //+  (supports interupts)
 
 const int FL_steering_motor_speed_PWM_pin = 6;           // EN-A  Blue Corner
-const int FL_steering_motor_direction_A_pin = 23;        // IN-1
-const int FL_steering_motor_direction_B_pin = 25;        // IN-2
-const int FL_wheel_rotation_motor_direction_A_pin = 27;  // IN-3
-const int FL_wheel_rotation_motor_direction_B_pin = 29;  // IN-4
+const int FL_steering_motor_direction_A_pin = 25; // 23;        // IN-1  reversed
+const int FL_steering_motor_direction_B_pin = 23; // 25;        // IN-2
+const int FL_wheel_rotation_motor_direction_A_pin = 29; //  27;  // IN-3   Reversed
+const int FL_wheel_rotation_motor_direction_B_pin = 27; //  29;  // IN-4
 const int FL_wheel_rotation_motor_speed_PWM_pin = 7;     // EN-B
 
 const int FR_steering_motor_speed_PWM_pin = 44;          // EN-A    Black Corner
-const int FR_steering_motor_direction_A_pin = 33;        // IN-1
-const int FR_steering_motor_direction_B_pin = 35;        // IN-2
-const int FR_wheel_rotation_motor_direction_A_pin = 37;  // IN-3
-const int FR_wheel_rotation_motor_direction_B_pin = 39;  // IN-4
+const int FR_steering_motor_direction_A_pin = 35; // 33;        // IN-1  Reversed
+const int FR_steering_motor_direction_B_pin = 33; // 35;        // IN-2
+const int FR_wheel_rotation_motor_direction_A_pin = 39; // 37;  // IN-3  Reversed
+const int FR_wheel_rotation_motor_direction_B_pin = 37; // 39;  // IN-4
 const int FR_wheel_rotation_motor_speed_PWM_pin = 46;    // EN-B
 
 const int BL_steering_motor_speed_PWM_pin = 13;          //     White Corner
@@ -247,10 +245,10 @@ const int BL_wheel_rotation_motor_direction_B_pin = 9;   //
 const int BL_wheel_rotation_motor_speed_PWM_pin = 8;     //
 
 const int BR_steering_motor_speed_PWM_pin = 45;          // EN-A    Silver Corner
-const int BR_steering_motor_direction_A_pin = 43;        // IN-1
-const int BR_steering_motor_direction_B_pin = 47;        // IN-2
-const int BR_wheel_rotation_motor_direction_A_pin = 49;  // IN-3
-const int BR_wheel_rotation_motor_direction_B_pin = 51;  // IN-4
+const int BR_steering_motor_direction_A_pin = 47; // 43;        // IN-1  Reversed
+const int BR_steering_motor_direction_B_pin = 43; // 47;        // IN-2
+const int BR_wheel_rotation_motor_direction_A_pin = 51; // 49;  // IN-3  Reversed
+const int BR_wheel_rotation_motor_direction_B_pin = 49; // 51;  // IN-4
 const int BR_wheel_rotation_motor_speed_PWM_pin = 5;     // EN-B
 
 
@@ -282,21 +280,8 @@ void setup() {
 
 void loop() {
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  //  Enable the debug flag once per second (1000) to print status and loops per second count
-  // loop_counter = loop_counter + 1;   // Moved to inside of the loop
-  if (millis() > nextTime) {
-    nextTime += 1000;  // Number of milliseconds between prints to monitor
-    // Serial.print("LPS: ");
-    // Serial.println(loop_counter);
-    // Serial.println("Calling order FL(Blue),    FR(Black),    BL(White),   BR(Silver)");
+  debugflag = enable_periodic_printing_for_debug(1000);
 
-    loop_counter = 0;
-    debugflag = true;  // Control printing for debugging
-  } else {
-    debugflag = false;
-    loop_counter = loop_counter + 1;
-  }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   //      BLUE       BLACK
   //     [ FL ]      [ FR ]
@@ -305,9 +290,6 @@ void loop() {
   //
   //     [ BL ]      [ BR ]
   //      WHITE       SILVER
-
-  // BL_HeadingSensor_A = A0;
-  // BL_HeadingSensor_B = A1;
 
   // Wheel Heading sensor
   FL_current_heading = readCurrentHeading(FL_HeadingSensor_A, FL_HeadingSensor_B);  // Update to pass parameters
@@ -320,7 +302,6 @@ void loop() {
   //                                                      BL_current_heading, BR_current_heading);
 
   if (debugflag && true) {
-    // Serial.println("");
     Serial.print("Headings:  blue FL: ");
     Serial.print(FL_current_heading);
     Serial.print(" black FR: ");
@@ -334,10 +315,12 @@ void loop() {
   // Read joystick and use it to drive wheels
   y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
   motor_speed = calculate_motor_speed_value(y_control_value);
+
+  // motor_speed = 0;               //  TEMP to isolate test
   FL_motor_speed = motor_speed;  //  FIRST CUT - MAKE ALL WHEELS TURN AT THE SAME SPEED
-  // FR_motor_speed = motor_speed;
-  // BL_motor_speed = motor_speed;
-  // BR_motor_speed = motor_speed;
+  FR_motor_speed = motor_speed;
+  BL_motor_speed = motor_speed;
+  BR_motor_speed = motor_speed;
 
   set_wheel_speed(FL_wheel_rotation_motor_direction_A_pin, FL_wheel_rotation_motor_direction_B_pin,
                   FL_wheel_rotation_motor_speed_PWM_pin, FL_motor_speed);
@@ -353,26 +336,33 @@ void loop() {
     homeWheel = home_wheels_when_joystick_pressed();
   }
 
+  homeWheel = false;  //  TEMP to isolate testing to wheel heading
+
   // Do not steer the wheel based on joystick once the home joystick button is pressed
   if (homeWheel == false) {
     // Used for wheel steering
     x_control_value = get_joystick_x_control_value();
-
     desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
 
     if (debugflag && false) {
       Serial.print("Joystick Test: X: ");
       Serial.print(x_control_value);
-      Serial.print("   y = ");
-      Serial.println(y_control_value);
+      Serial.print("   Desired Heading ");
+      Serial.println(desired_wheel_heading_value);
     }
-
+    // BLUE
     set_wheel_heading(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
                       FL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FL_current_heading);
+
+    // Black  working
     set_wheel_heading(FR_steering_motor_direction_A_pin, FR_steering_motor_direction_B_pin,
                       FR_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FR_current_heading);
+
+    //  White - Working
     set_wheel_heading(BL_steering_motor_direction_A_pin, BL_steering_motor_direction_B_pin,
                       BL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, BL_current_heading);
+
+    // Silver working
     set_wheel_heading(BR_steering_motor_direction_A_pin, BR_steering_motor_direction_B_pin,
                       BR_steering_motor_speed_PWM_pin, desired_wheel_heading_value, BR_current_heading);
   }
@@ -400,8 +390,8 @@ void loop() {
   }
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - -
-}
-//========================================================================
+}  // End of Main loop
+//====(End of Main loop)====================================================================
 
 //// Initialize the OLED Display
 // void initializeDisplay() {
@@ -470,8 +460,8 @@ float calculateHeading(int sensor_name_A, float sensorValueA0, int sensor_name_B
   } else {
     //  Using mid range of Sensor on A1 for the wheel heading of 90 to 180 and -90 to -180
     sensorValueA0Component = 0;
-    sensorValueA1Component = - lineSlope * sensorValueA1 + 351.1;  // silver
-    if (sensorValueA1Component > 180) sensorValueA1Component = sensorValueA1Component - 360; // silver  SA=61
+    sensorValueA1Component = -lineSlope * sensorValueA1 + 351.1;                              // silver
+    if (sensorValueA1Component > 180) sensorValueA1Component = sensorValueA1Component - 360;  // silver  SA=61
   }
   int heading = sensorValueA0Component + sensorValueA1Component;
 
@@ -589,6 +579,16 @@ void updateEncoder() {
 // Read the joystick X position (lateral) and return 0 (full left) to 1023 (Full Right)
 float get_joystick_x_control_value() {
   analogControl = analogRead(joystick_x_axis);
+
+  // Serial.print("  A8: ");
+  // Serial.print(analogRead(A8));
+  // Serial.print("  A9: ");
+  // Serial.print(analogRead(A9));
+  // Serial.print("  A10: ");
+  // Serial.print(analogRead(A10));
+  // Serial.print("  A11: ");
+  // Serial.println(analogRead(A11));
+
   return analogControl;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -742,14 +742,14 @@ float convert_joystick_to_heading_value(int joystick_x_value) {
   if (joystick_x_value > (joystick_x_middle_value + joystick_deadzone)) {
     // if (joystick_x_value > 515) {
     // set_steering_motor_direction("ccw");  ////  ERROR - THESE DON'T BELONG HERE, WE ARE NOT MOVING THE MOTOR
-    heading_value = map(joystick_x_value, joystick_x_middle_value, 1023, 0, -90);
+    heading_value = map(joystick_x_value, joystick_x_middle_value, 1023, 0, 90);
     //    Serial.print(" CCW > ");
 
     // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
     // } else if (joystick_x_value < 505) {
   } else if (joystick_x_value < (joystick_x_middle_value - joystick_deadzone)) {
     // set_steering_motor_direction("cw");  ////  ERROR - THESE DON'T BELONG HERE, WE ARE NOT MOVING THE MOTOR
-    heading_value = map(joystick_x_value, joystick_x_middle_value, 0, 0, 90);
+    heading_value = map(joystick_x_value, joystick_x_middle_value, 0, 0, -90);
     //    Serial.print(" CW > ");
 
     // When the joystick to centered (510), the wheels will turn to center
@@ -774,28 +774,32 @@ void set_wheel_heading(int ww_steering_motor_direction_A_pin, int ww_steering_mo
 
   // IF current is at 0 and desired is +30 (right) THEN hd = 30 (turning right)
   // IF current is at 0 and desired is -30 (left) THEN hd = -30 (turning left)
-  // IF current is at 30 (right) and desired is -30 (left) THEN hd = -60 (turning left)
+  // IF current is at 30 (right) and desired is -30 (left) THEN hd = -60 (turning l`eft)
   // IF current is at -30 (left) and desired is + 30 (right) THEN hd = 60 (turning right)
   // IF current is at 30
   // ... IF hd is positive, set motor to turn wheel heading cw
   // ... IF hd is negative, set motor to turn wheel heading ccw
 
-  float heading_alignment_tolerance = 8;
+  int option = 0;
+  float heading_alignment_tolerance = 15;
   float heading_change_speed = 150;  //
 
+
+
+  // if (abs(current_heading) > 160) {
+  //   runWheelSteeringMotor(ww_steering_motor_direction_A_pin, ww_steering_motor_direction_B_pin,
+  //                         ww_steering_motor_speed_PWM_pin, 0);
+
+  //   if (debugflag && true) {
+  //     Serial.print(ww_steering_motor_speed_PWM_pin);
+  //     Serial.println(" :Reached +/- 170 degree limit");
+  //   }
+  // }
+
   float heading_difference = desired_wheel_heading_value - current_heading;
-
-  int option = 0;
-
-  if (abs(current_heading) > 160) {
-    runWheelSteeringMotor(ww_steering_motor_direction_A_pin, ww_steering_motor_direction_B_pin,
-                          ww_steering_motor_speed_PWM_pin, 0);
-
-    if (debugflag && false) {
-      Serial.print(ww_steering_motor_speed_PWM_pin);
-      Serial.println(" :Reached +/- 170 degree limit");
-    }
-  }
+  //  CW is positive, CCW is negative
+  //  If heading_difference is positive, turn CW
+  //  If heading_difference is negative, turn CCW
 
   // Check to see if within the tolerance window
   if (abs(heading_difference) <= heading_alignment_tolerance) {
@@ -815,10 +819,12 @@ void set_wheel_heading(int ww_steering_motor_direction_A_pin, int ww_steering_mo
     }
   }
 
-  if (debugflag && false) {
+  // PWM Pin Silver = 45, White = 13, Black = 44, Blue = 6
+
+  if (debugflag && true  && (ww_steering_motor_speed_PWM_pin == 45) ) { // Blue = 6
     Serial.print("Wheel: ");
     Serial.print(ww_steering_motor_speed_PWM_pin);
-    Serial.print("Current: ");
+    Serial.print("  Current: ");
     Serial.print(current_heading);
     Serial.print(" Desired: ");
     Serial.print(desired_wheel_heading_value);
@@ -1094,6 +1100,24 @@ float add_wheel_specific_offset_to_angle(int sensor_name, float raw_offset_angle
 }
 
 //------------------------------------------------------------------------
+
+//  Enable the debug flag once per second (1000) to print status and loops per second count
+bool enable_periodic_printing_for_debug(float interval) {
+  bool local_debugflag = false;
+  if (millis() > nextTime) {
+    nextTime += interval;  // Number of milliseconds between prints to monitor
+    Serial.print("LPS: ");
+    Serial.println(loop_counter);
+    // Serial.println("Calling order FL(Blue),    FR(Black),    BL(White),   BR(Silver)");
+
+    loop_counter = 0;
+    local_debugflag = true;  // Control printing for debugging
+  } else {
+    local_debugflag = false;
+    loop_counter = loop_counter + 1;
+  }
+  return local_debugflag;
+}
 
 //------------------------------------------------------------------------
 
