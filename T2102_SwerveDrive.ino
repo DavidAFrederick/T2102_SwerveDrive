@@ -320,7 +320,7 @@ void loop() {
   //                                                      BL_current_heading, BR_current_heading);
 
   if (debugflag && true) {
-    Serial.println("");
+    // Serial.println("");
     Serial.print("Headings:  blue FL: ");
     Serial.print(FL_current_heading);
     Serial.print(" black FR: ");
@@ -470,28 +470,12 @@ float calculateHeading(int sensor_name_A, float sensorValueA0, int sensor_name_B
   } else {
     //  Using mid range of Sensor on A1 for the wheel heading of 90 to 180 and -90 to -180
     sensorValueA0Component = 0;
-
-    // sensorValueA1Component = lineSlope * sensorValueA1 + 12.66;
     sensorValueA1Component = - lineSlope * sensorValueA1 + 351.1;  // silver
     if (sensorValueA1Component > 180) sensorValueA1Component = sensorValueA1Component - 360; // silver  SA=61
-
-
-    // if (sensorValueA1 > 500) {                                    ///  FIX THIS
-    // if (sensorValueA1 < 500) {                                    ///  FIX THIS  original
-    //   sensorValueA1Component = lineSlope * sensorValueA1 + 12.66;
-    // } else {
-    //   sensorValueA1Component = lineSlope * sensorValueA1 - 351.1;
-    // }
   }
   int heading = sensorValueA0Component + sensorValueA1Component;
 
-  if (debugflag && true && (sensor_name_A == 59)) {  // 61=silver, 55=white, 57 = blue, 59 = black
-
-    // Serial.print(" [Silver]BR: ");
-    // Serial.print(analogRead(A6));
-    // Serial.print(" ");
-    // Serial.print(analogRead(A7));
-    // Serial.println(" ");
+  if (debugflag && false && (sensor_name_A == 59)) {  // 61=silver, 55=white, 57 = blue, 59 = black
 
     Serial.print("Sensor A Name: ");
     Serial.print(sensor_name_A);
@@ -509,9 +493,6 @@ float calculateHeading(int sensor_name_A, float sensorValueA0, int sensor_name_B
     Serial.print(" Heading: ");
     Serial.println(heading);
   }
-
-
-
   return heading;
 }
 
@@ -1030,7 +1011,7 @@ float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
     Serial.println(local_current_heading);
   }
 
-  add_wheel_specific_offset_to_angle(sensor_name_B, local_current_heading);
+  local_current_heading = add_wheel_specific_offset_to_angle(sensor_name_B, local_current_heading);
 
   if (debugflag && false && (sensor_name_B == 60)) {
     if (sensor_name_A == 56) Serial.print("Blue   - FL - ");
