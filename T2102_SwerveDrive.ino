@@ -240,8 +240,8 @@ const int FR_wheel_rotation_motor_speed_PWM_pin = 46;    // EN-B
 const int BL_steering_motor_speed_PWM_pin = 13;          //     White Corner
 const int BL_steering_motor_direction_A_pin = 12;        //
 const int BL_steering_motor_direction_B_pin = 11;        //
-const int BL_wheel_rotation_motor_direction_A_pin = 10;  //
-const int BL_wheel_rotation_motor_direction_B_pin = 9;   //
+const int BL_wheel_rotation_motor_direction_A_pin = 9; // reversed 10;  //
+const int BL_wheel_rotation_motor_direction_B_pin = 10; // 9;   //
 const int BL_wheel_rotation_motor_speed_PWM_pin = 8;     //
 
 const int BR_steering_motor_speed_PWM_pin = 45;          // EN-A    Silver Corner
@@ -301,7 +301,7 @@ void loop() {
   // if (debugflag && false) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
   //                                                      BL_current_heading, BR_current_heading);
 
-  if (debugflag && true) {
+  if (debugflag && false) {
     Serial.print("Headings:  blue FL: ");
     Serial.print(FL_current_heading);
     Serial.print(" black FR: ");
@@ -821,7 +821,7 @@ void set_wheel_heading(int ww_steering_motor_direction_A_pin, int ww_steering_mo
 
   // PWM Pin Silver = 45, White = 13, Black = 44, Blue = 6
 
-  if (debugflag && true  && (ww_steering_motor_speed_PWM_pin == 45) ) { // Blue = 6
+  if (debugflag && false  && (ww_steering_motor_speed_PWM_pin == 45) ) { // Blue = 6
     Serial.print("Wheel: ");
     Serial.print(ww_steering_motor_speed_PWM_pin);
     Serial.print("  Current: ");
