@@ -7,13 +7,13 @@ Review each function to see if it can be uses for all 4 drive wheels
 
 
 ToDo:
-Update wheel rotation motor speed control to access -254 (Reverse) to 254 (forward)
+x - Update wheel rotation motor speed control to access -254 (Reverse) to 254 (forward)
 
-Add descriptions to  each function
+x - Add descriptions to  each function
 
-Update variables with names for specific wheels
+x - Update variables with names for specific wheels
 
-Update function notes on joystick position
+x - Update function notes on joystick position
 
 Get rotary control working (Not sure how to use it to drive robot)
 
