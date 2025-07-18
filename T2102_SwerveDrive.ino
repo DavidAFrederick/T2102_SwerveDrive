@@ -7,11 +7,27 @@ Disabled to resolve this issue
 */
 
 #include <Arduino.h>
-//// #include <Adafruit_SSD1306.h>
-//// #define OLED_ADDR 0x3C  // Replace with your OLED's I2C address
-#include "RotaryEncoder.h"
+#include <Adafruit_SSD1306.h>
+#define OLED_ADDR 0x3C  // Replace with your OLED's I2C address
+Adafruit_SSD1306 display(OLED_ADDR);
 
-//// Adafruit_SSD1306 display(OLED_ADDR);
+// #include "RotaryEncoder.h"
+
+// Heading measuring code Derived from Example code "pitchrollheading" found in V2 IDE
+
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_LSM303_U.h>
+#include <Adafruit_L3GD20_U.h>
+#include <Adafruit_9DOF.h>
+
+Adafruit_9DOF dof = Adafruit_9DOF();
+Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(30301);
+Adafruit_LSM303_Mag_Unified mag = Adafruit_LSM303_Mag_Unified(30302);
+
+String heading_for_display = "";
+bool first_pass = true;
+float initial_heading_value = 0;
 
 int FL_sensorValueA0 = 0;
 int FL_sensorValueA1 = 0;
@@ -102,8 +118,14 @@ A6 = Heading Sensor B = Module Silver (BR) - Back Right (BR)  - [Yellow]
 A7 = Heading Sensor A = Module Silver (BR)  - [Orange] - Bottom sensor
 
 A8 = Robot Controller Joystick - X axis - [Green]
-A9 = Robot Controller Joystick - Y axis - [Yellow]
+A11 = Robot Controller Joystick - Y axis - [Yellow]
 D53 = Robot Controller Joystick - Push Switch - [Orange]
+
+Updated 7/18/2025
+int left_joystick_x_axis = A15;  // [purple Full Left = 0, Full Right = 1023, middle = 508
+int left_joystick_y_axis = A14;  // [gray] Full forward = 1023, Full back = 0, Middle = 510
+int left_joystick_switch = 52;   // [blue]
+
 
 Notes on Sensors:
 There is a tiny notch on the potentiometer
@@ -120,9 +142,9 @@ Degrees:   Bottom sensor:   Top Sensor:
 Digital
 D0  - Can't be used -  TX/RX
 D1  - Can't be used -  TX/RX
-D2  - Rotary Encoder Data - Interrupt - [Blue]
-D3  - Rotary Encoder Clock - Interrupt - [Purple]
-D4  - Rotary Encoder Switch - [Gray]
+D2  - Rotary Encoder Data - Interrupt - [Blue]     -- Not used any more
+D3  - Rotary Encoder Clock - Interrupt - [Purple]  -- Not used any more
+D4  - Rotary Encoder Switch - [Gray]               -- Now at D52
 
 D5  - PWM - Motor Controller - EN-B - Silver (BR)  - Drive - [GRAY]
 D6  - PWM - Motor Controller - EN-A - Blue (FL)  - Heading - [Orange]
@@ -213,16 +235,23 @@ int BR_HeadingSensor_A = A7;  // 61 [orange]  //  Silver corner
 int joystick_x_axis = A11;  // Full Left = 0, Full Right = 1023, middle = 508
 int joystick_y_axis = A8;   // Full forward = 1023, Full back = 0, Middle = 510
 
+int right_joystick_switch = 53;
+int left_joystick_x_axis = A15;  // purple Full Left = 0, Full Right = 1023, middle = 508
+int left_joystick_y_axis = A14;  // gray Full forward = 1023, Full back = 0, Middle = 510
+int left_joystick_switch = 52;
+
+
 // TEMP:  D18 - Interrupt - Motor Encoder - C1 - [BROWN] - White (BL)
 // TEMP:  D19 - Interrupt - Motor Encoder - C2 - [WHITE] - White (BL)
 
 //  interrupt pins: 2, 3, 18, 19, 20, and 21.
 
-const int rotary_encoder_data_pin = 2;    // D2   (Interrupt)
-const int rotary_encoder_clock_pin = 3;   // D3   (Interrupt)
-const int rotary_encoder_switch_pin = 4;  //+ D4
+// const int rotary_encoder_data_pin = 2;    // D2   (Interrupt)
+// const int rotary_encoder_clock_pin = 3;   // D3   (Interrupt)
+// const int rotary_encoder_switch_pin = 4;  //+ D4
 
-const int joystickSwitch_pin = 53;  // D
+const int left_joystickSwitch_pin = 52;  // 
+const int right_joystickSwitch_pin = 53;  // 
 
 const int BL_rotation_motor_encoder_A_pin = 19;  //+  (supports interupts) - Only White (BL) - One wheel
 const int BL_rotation_motor_encoder_B_pin = 18;  //+  (supports interupts)
@@ -256,33 +285,55 @@ const int BR_wheel_rotation_motor_direction_B_pin = 49;  // 51;  // IN-4
 const int BR_wheel_rotation_motor_speed_PWM_pin = 5;     // EN-B
 
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// Rotary Encoder Test Code
-int Counter1 = 0, LastCount1 = 0;  // Not needed just for test
-void RotaryChanged();              // we need to declare the func above so Rotary goes to the one below
-// RotaryEncoder Rotary1(&RotaryChanged, 2, 3, 4);  // + Pins  (DT),  (CLK),  (SW)
-RotaryEncoder Rotary1(&RotaryChanged, rotary_encoder_data_pin, rotary_encoder_clock_pin,
-                      rotary_encoder_switch_pin);  // + Pins  (DT),  (CLK),  (SW)
+// // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// // Rotary Encoder Test Code
+// int Counter1 = 0, LastCount1 = 0;  // Not needed just for test
+// void RotaryChanged();              // we need to declare the func above so Rotary goes to the one below
+// // RotaryEncoder Rotary1(&RotaryChanged, 2, 3, 4);  // + Pins  (DT),  (CLK),  (SW)
+// RotaryEncoder Rotary1(&RotaryChanged, rotary_encoder_data_pin, rotary_encoder_clock_pin,
+//                       rotary_encoder_switch_pin);  // + Pins  (DT),  (CLK),  (SW)
 
-volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
-int lastEncoded = 0;          // Used to track last encoder state
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
+// int lastEncoded = 0;          // Used to track last encoder state
+// // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 //=============================================================================
 
 void setup() {
   Serial.begin(9600);
-  //// initializeDisplay();
+  initSensors();
+  initializeDisplay();
   configure_pins();
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // - - - Rotary Encoder Test Code --
-  Rotary1.setup();
+  // Rotary1.setup();
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }
 //=============================================================================
 
 void loop() {
+
+  sensors_event_t mag_event;
+  sensors_vec_t orientation;
+
+  /* Calculate the heading using the magnetometer */
+  mag.getEvent(&mag_event);
+  if (dof.magGetOrientation(SENSOR_AXIS_Z, &mag_event, &orientation)) {
+
+    if (first_pass) {
+      initial_heading_value = orientation.heading;
+      first_pass = false;
+    }
+
+    if (debugflag && true) {
+      // Serial.print(F("Heading: "));
+      // Serial.println(orientation.heading);
+      heading_for_display = orientation.heading - initial_heading_value;
+      display_text_on_OLED(heading_for_display);
+    }
+  }
+
 
   debugflag = enable_periodic_printing_for_debug(1000);
 
@@ -334,13 +385,6 @@ void loop() {
                   BL_wheel_rotation_motor_speed_PWM_pin, BL_motor_speed);
   set_wheel_speed(BR_wheel_rotation_motor_direction_A_pin, BR_wheel_rotation_motor_direction_B_pin,
                   BR_wheel_rotation_motor_speed_PWM_pin, BR_motor_speed);
-
-  //  When the joystick button is pressed, drive the wheel direction to zero.
-  // if (JoystickButtonPressed()) {
-  //   homeWheel = home_wheels_when_joystick_pressed();    // !! No longer needed
-  // }
-
-  // homeWheel = false;  //  TEMP to isolate testing to wheel heading
 
   // Do not steer the wheel based on joystick once the home joystick button is pressed
   if (rotate_configuration == false) {
@@ -395,51 +439,51 @@ void loop() {
                     BR_wheel_rotation_motor_speed_PWM_pin, -wheel_rotate_speed);
   }
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // - Temporary code for wheel drive - motor encoder
-  static int lastReportedPos = 0;  // Keep track of last reported position
-  if (encoderPos != lastReportedPos) {
-    //    Serial.print("Position: ");
-    //    Serial.println(encoderPos);
-    lastReportedPos = encoderPos;
-  }
+  // // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // // - Temporary code for wheel drive - motor encoder
+  // static int lastReportedPos = 0;  // Keep track of last reported position
+  // if (encoderPos != lastReportedPos) {
+  //   //    Serial.print("Position: ");
+  //   //    Serial.println(encoderPos);
+  //   lastReportedPos = encoderPos;
+  // }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Rotary Encoder Test Code
 
-  if (Rotary1.GetButtonDown()) {
-    // Serial.println("Button 1 down");
+  // if (Rotary1.GetButtonDown()) {
+  //   // Serial.println("Button 1 down");
 
-    if (rotate_configuration == false) {
-      rotate_configuration = true;
-      Serial.println("Rotate Configuration On ++++");
-    } else {
-      rotate_configuration = false;
-      Serial.println("Rotate Configuration Off -------");
-      wheel_rotate_speed = 0;
-    }
-  }
-
-  if (LastCount1 != Counter1) {
-    Serial.print("Counter1:  ");
-    Serial.println(Counter1);
-    LastCount1 = Counter1;
-  }
+  //   if (rotate_configuration == false) {
+  //     rotate_configuration = true;
+  //     Serial.println("Rotate Configuration On ++++");
+  //   } else {
+  //     rotate_configuration = false;
+  //     Serial.println("Rotate Configuration Off -------");
+  //     wheel_rotate_speed = 0;
+  //   }
+  // }
+  // 
+  // if (LastCount1 != Counter1) {
+  //   Serial.print("Counter1:  ");
+  //   Serial.println(Counter1);
+  //   LastCount1 = Counter1;
+  // }
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }  // End of Main loop
 //====(End of Main loop)====================================================================
 
-//// Initialize the OLED Display
-// void initializeDisplay() {
-//   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);  // Initialize the display
-//   display.clearDisplay();                          // Clear the display
-//   display.setTextColor(WHITE);                     // Set text color
-//   display.setTextSize(2);                          // Set text size (Was 2)
-//   display.clearDisplay();                          // Clear the display
-//   delay(100);                                      // Wait for 2 seconds
-// }
+// Initialize the OLED Display
+void initializeDisplay() {
+  display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);  // Initialize the display
+  display.clearDisplay();                          // Clear the display
+  display.setTextColor(WHITE);                     // Set text color
+  display.setTextSize(2);                          // Set text size (Was 2)
+  display.clearDisplay();                          // Clear the display
+  delay(100);                                      // Wait for 2 seconds
+}
 
 //------------------------------------------------------------------------
 
@@ -583,12 +627,15 @@ void configure_pins() {
   // Signals to Wheel Rotation Drive Motor Encoder on WHITE MODULE (only)
   pinMode(BL_rotation_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
   pinMode(BL_rotation_motor_encoder_B_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
-  attachInterrupt(digitalPinToInterrupt(BL_rotation_motor_encoder_A_pin), updateEncoder, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(BL_rotation_motor_encoder_B_pin), updateEncoder, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(BL_rotation_motor_encoder_A_pin), updateEncoder, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(BL_rotation_motor_encoder_B_pin), updateEncoder, CHANGE);
 
-  // Joystick
-  pinMode(joystickSwitch_pin, INPUT_PULLUP);
+  // Joysticks 
+  // pinMode(joystickSwitch_pin, INPUT_PULLUP);  REMOVE
+  pinMode(right_joystick_switch, INPUT_PULLUP);
+  pinMode(left_joystick_switch, INPUT_PULLUP);
 }
+// }
 
 //------------------------------------------------------------------------
 
@@ -597,20 +644,20 @@ void configure_pins() {
   Increments or decrements a counter
 */
 
-void updateEncoder() {
-  int MSB = digitalRead(BL_rotation_motor_encoder_A_pin);  // Only One Motor Encoder which is on BL
-  int LSB = digitalRead(BL_rotation_motor_encoder_B_pin);
-  int encoded = (MSB << 1) | LSB;
-  int sum = (lastEncoded << 2) | encoded;
+// void updateEncoder() {
+//   int MSB = digitalRead(BL_rotation_motor_encoder_A_pin);  // Only One Motor Encoder which is on BL
+//   int LSB = digitalRead(BL_rotation_motor_encoder_B_pin);
+//   int encoded = (MSB << 1) | LSB;
+//   int sum = (lastEncoded << 2) | encoded;
 
-  if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) {
-    encoderPos++;
-  }
-  if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) {
-    encoderPos--;
-  }
-  lastEncoded = encoded;
-}
+//   if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011) {
+//     encoderPos++;
+//   }
+//   if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) {
+//     encoderPos--;
+//   }
+//   lastEncoded = encoded;
+// }
 
 //------------------------------------------------------------------------
 
@@ -647,19 +694,19 @@ float get_joystick_y_control_value() {             // Forward speed
 //}
 
 //------------------------------------------------------------------------
-// Rotary Encoder Test Code
-void RotaryChanged() {
-  int rotation_speed_increase = 10;
-  const unsigned int state1 = Rotary1.GetState();
-  if (state1 & DIR_CW) {
-    Counter1++;
-    wheel_rotate_speed = wheel_rotate_speed + rotation_speed_increase;
-  }
-  if (state1 & DIR_CCW) {
-    Counter1--;
-    wheel_rotate_speed = wheel_rotate_speed - rotation_speed_increase;
-  }
-}
+// // Rotary Encoder Test Code
+// void RotaryChanged() {
+//   int rotation_speed_increase = 10;
+//   const unsigned int state1 = Rotary1.GetState();
+//   if (state1 & DIR_CW) {
+//     Counter1++;
+//     wheel_rotate_speed = wheel_rotate_speed + rotation_speed_increase;
+//   }
+//   if (state1 & DIR_CCW) {
+//     Counter1--;
+//     wheel_rotate_speed = wheel_rotate_speed - rotation_speed_increase;
+//   }
+// }
 //------------------------------------------------------------------------
 
 // Controls the direction of rotation of the wheel drive motor
@@ -889,10 +936,14 @@ void set_wheel_heading(int ww_steering_motor_direction_A_pin, int ww_steering_mo
 
 //------------------------------------------------------------------------
 
-//  Released = 0 and pressed = 1
-
-bool JoystickButtonPressed() {
-  int pinInputValue = !digitalRead(joystickSwitch_pin);
+// Read joystick switch value,    Released = 0 and pressed = 1
+bool RightJoystickButtonPressed() {
+  int pinInputValue = !digitalRead(right_joystickSwitch_pin);
+  return pinInputValue;
+}
+// Read joystick switch value,    Released = 0 and pressed = 1
+bool LeftJoystickButtonPressed() {
+  int pinInputValue = !digitalRead(left_joystickSwitch_pin);
   return pinInputValue;
 }
 
@@ -1163,11 +1214,43 @@ bool enable_periodic_printing_for_debug(float interval) {
 }
 
 //------------------------------------------------------------------------
+void initSensors() {
+
+  if (!mag.begin()) {
+    /* There was a problem detecting the LSM303 ... check your connections */
+    Serial.println("Ooops, no LSM303 detected ... Check your wiring!");
+    while (1)
+      ;
+  }
+}
+//------------------------------------------------------------------------
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void display_text_on_OLED(String text_to_display) {
+  display.setCursor(0, 0);         // Set cursor position
+  display.print(text_to_display);  // Print text
+  display.display();               // Update the display
+  delay(10);                       //
+  display.clearDisplay();          // Clear the display
+  delay(1);                        //
+}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 //------------------------------------------------------------------------
 
+
 //------------------------------------------------------------------------
 
+
+
+//------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------
 //------------------------------------------------------------------------
 
 // No printing:  About 1700 loops per second

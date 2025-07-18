@@ -1,4 +1,28 @@
 
+Team 4795 Eastbots swerve drive presentation
+
+https://cad.onshape.com/documents/066812c4897cd90bd1e2e1d7/w/8d3243774efc13f23f592c2e/e/1d4fbf9de9009f314ccabcad
+
+Team 364 Swerve Code  base falcon swerve
+https://youtu.be/EnZSUYVy834
+
+
+Next Updates:
+Software
+- Add i2C gyro
+- Get OLED working
+
+Hardware
+- Better battery holder
+- Cover wires
+
+Electronics:
+
+Teaching:
+- Print parts
+
+
+
 Review code to remove numbers
 
 
