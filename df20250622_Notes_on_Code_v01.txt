@@ -73,8 +73,30 @@ Capabilities on 4 wheel swerve:
 3) Turn while moving
     - Complex
 
+=============
+
+Notes on switching from encoder to left joystick
+
+Rotary1.GetButtonDown
+
+Original Design:  
+Pressing rotary encoder caused robot to angle wheels for rotation.
+Turning the dial would rotate the robot.
+
+Flag for rotation:    rotate_configuration = true;
+wheel_rotate_speed = 0;
+
+LeftJoystickButtonPressed()
+
+>> Need to write code to set wheel speed during rotation
+Original code is near line 687
+
+for normal driving, get joystick and calculate speed near line  368
+
+wheel_rotate_speed
 
 
+=============
 
 
 Resources:

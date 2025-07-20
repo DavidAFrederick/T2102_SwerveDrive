@@ -1,4 +1,4 @@
-//  July 9, 2025  17:30
+//  July 19, 2025  10:30
 /*
 Problems:
 The OLED code is breaking A6 Heading Sensor.
@@ -52,16 +52,16 @@ float FR_current_heading = 0;
 float BL_current_heading = 0;
 float BR_current_heading = 0;
 
-
 int analogControl = 0;
-int joystick_x_value = 0;
-int joystick_y_value = 0;
-float y_control_value = 0;
-float x_control_value = 0;
+int right_joystick_x_value = 0;
+int right_joystick_y_value = 0;
+float right_y_control_value = 0;
+float right_x_control_value = 0;
+float left_y_control_value = 0;
+float left_x_control_value = 0;
 float joystick_y_middle_value = 510;
 float joystick_x_middle_value = 510;
 float joystick_deadzone = 5;
-
 
 float motor_speed = 0;
 float FL_motor_speed = 0;
@@ -84,10 +84,9 @@ bool homeWheel = false;
 bool rotate_configuration = false;
 
 
-
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 /*
-
+>> Notes on Arduino Mega capabilities <<========
 DIO 54 
 PWM 15 -  15 PWM pins: 2 through 13, and 44, 45, and 46.
 Interrupts 6 - interrupt pins: 2, 3, 18, 19, 20, and 21.   (Used on one wheel and the rotary controller)
@@ -137,7 +136,6 @@ Degrees:   Bottom sensor:   Top Sensor:
   180       490             0
   270       774             703
  ~355       1023            533
-
 
 Digital
 D0  - Can't be used -  TX/RX
@@ -232,14 +230,15 @@ int FR_HeadingSensor_A = A5;  // 59 [gray]    //  Black corner
 int BR_HeadingSensor_B = A6;  // 60 [yellow]  - long wire - lower sensor
 int BR_HeadingSensor_A = A7;  // 61 [orange]  //  Silver corner
 
-int joystick_x_axis = A11;  // Full Left = 0, Full Right = 1023, middle = 508
-int joystick_y_axis = A8;   // Full forward = 1023, Full back = 0, Middle = 510
-
+int right_joystick_x_axis = A11;  // Full Left = 0, Full Right = 1023, middle = 508
+int right_joystick_y_axis = A8;   // Full forward = 1023, Full back = 0, Middle = 510
 int right_joystick_switch = 53;
 int left_joystick_x_axis = A15;  // purple Full Left = 0, Full Right = 1023, middle = 508
 int left_joystick_y_axis = A14;  // gray Full forward = 1023, Full back = 0, Middle = 510
 int left_joystick_switch = 52;
 
+// const int left_joystickSwitch_pin = 52;  //
+// const int right_joystickSwitch_pin = 53;  //
 
 // TEMP:  D18 - Interrupt - Motor Encoder - C1 - [BROWN] - White (BL)
 // TEMP:  D19 - Interrupt - Motor Encoder - C2 - [WHITE] - White (BL)
@@ -250,8 +249,6 @@ int left_joystick_switch = 52;
 // const int rotary_encoder_clock_pin = 3;   // D3   (Interrupt)
 // const int rotary_encoder_switch_pin = 4;  //+ D4
 
-const int left_joystickSwitch_pin = 52;  // 
-const int right_joystickSwitch_pin = 53;  // 
 
 const int BL_rotation_motor_encoder_A_pin = 19;  //+  (supports interupts) - Only White (BL) - One wheel
 const int BL_rotation_motor_encoder_B_pin = 18;  //+  (supports interupts)
@@ -283,7 +280,6 @@ const int BR_steering_motor_direction_B_pin = 43;        // 47;        // IN-2
 const int BR_wheel_rotation_motor_direction_A_pin = 51;  // 49;  // IN-3  Reversed
 const int BR_wheel_rotation_motor_direction_B_pin = 49;  // 51;  // IN-4
 const int BR_wheel_rotation_motor_speed_PWM_pin = 5;     // EN-B
-
 
 // // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // // Rotary Encoder Test Code
@@ -368,10 +364,9 @@ void loop() {
   }
 
   // Read joystick and use it to drive wheels
-  y_control_value = get_joystick_y_control_value();  //   Returned value range:  0-1023
-  motor_speed = calculate_motor_speed_value(y_control_value);
+  right_y_control_value = get_right_joystick_y_control_value();  //   Returned value range:  0-1023
+  motor_speed = calculate_motor_speed_value(right_y_control_value);
 
-  // motor_speed = 0;               //  TEMP to isolate test
   FL_motor_speed = motor_speed;  //  FIRST CUT - MAKE ALL WHEELS TURN AT THE SAME SPEED
   FR_motor_speed = motor_speed;
   BL_motor_speed = motor_speed;
@@ -389,16 +384,16 @@ void loop() {
   // Do not steer the wheel based on joystick once the home joystick button is pressed
   if (rotate_configuration == false) {
     // Used for wheel steering
-    x_control_value = get_joystick_x_control_value();
-    desired_wheel_heading_value = convert_joystick_to_heading_value(x_control_value);
+    right_x_control_value = get_right_joystick_x_control_value();
+    desired_wheel_heading_value = convert_right_joystick_to_heading_value(right_x_control_value);
 
     if (debugflag && false) {
       Serial.print("Joystick Test: X: ");
-      Serial.print(x_control_value);
+      Serial.print(right_x_control_value);
       Serial.print("   Desired Heading ");
       Serial.println(desired_wheel_heading_value);
     }
-    // BLUE
+
     set_wheel_heading(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
                       FL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FL_current_heading);
     set_wheel_heading(FR_steering_motor_direction_A_pin, FR_steering_motor_direction_B_pin,
@@ -408,6 +403,12 @@ void loop() {
     set_wheel_heading(BR_steering_motor_direction_A_pin, BR_steering_motor_direction_B_pin,
                       BR_steering_motor_speed_PWM_pin, desired_wheel_heading_value, BR_current_heading);
   } else {
+  
+    //  Code for controlling the robot while in rotate only mode
+
+    left_x_control_value = get_left_joystick_x_control_value();  //   Returned value range:  0-1023
+    wheel_rotate_speed = calculate_motor_speed_value(left_x_control_value);
+
     if (debugflag && true) {
       Serial.print("rotate_configuration    speed: ");
       Serial.println(wheel_rotate_speed);
@@ -452,19 +453,19 @@ void loop() {
   // - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Rotary Encoder Test Code
 
-  // if (Rotary1.GetButtonDown()) {
-  //   // Serial.println("Button 1 down");
+  if (LeftJoystickButtonPressed()) {
+    Serial.println("Left Joystick Button 1 down");
 
-  //   if (rotate_configuration == false) {
-  //     rotate_configuration = true;
-  //     Serial.println("Rotate Configuration On ++++");
-  //   } else {
-  //     rotate_configuration = false;
-  //     Serial.println("Rotate Configuration Off -------");
-  //     wheel_rotate_speed = 0;
-  //   }
-  // }
-  // 
+    if (rotate_configuration == false) {
+      rotate_configuration = true;
+      Serial.println("Rotate Configuration On ++++");
+    } else {
+      rotate_configuration = false;
+      Serial.println("Rotate Configuration Off -------");
+      wheel_rotate_speed = 0;
+    }
+  }
+  //
   // if (LastCount1 != Counter1) {
   //   Serial.print("Counter1:  ");
   //   Serial.println(Counter1);
@@ -625,12 +626,12 @@ void configure_pins() {
 
   //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   // Signals to Wheel Rotation Drive Motor Encoder on WHITE MODULE (only)
-  pinMode(BL_rotation_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
-  pinMode(BL_rotation_motor_encoder_B_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
+  // pinMode(BL_rotation_motor_encoder_A_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
+  // pinMode(BL_rotation_motor_encoder_B_pin, INPUT_PULLUP);  // Enable internal pull-up resistor
   // attachInterrupt(digitalPinToInterrupt(BL_rotation_motor_encoder_A_pin), updateEncoder, CHANGE);
   // attachInterrupt(digitalPinToInterrupt(BL_rotation_motor_encoder_B_pin), updateEncoder, CHANGE);
 
-  // Joysticks 
+  // Joysticks
   // pinMode(joystickSwitch_pin, INPUT_PULLUP);  REMOVE
   pinMode(right_joystick_switch, INPUT_PULLUP);
   pinMode(left_joystick_switch, INPUT_PULLUP);
@@ -662,26 +663,30 @@ void configure_pins() {
 //------------------------------------------------------------------------
 
 // Read the joystick X position (lateral) and return 0 (full left) to 1023 (Full Right)
-float get_joystick_x_control_value() {
-  analogControl = analogRead(joystick_x_axis);
-
-  // Serial.print("  A8: ");
-  // Serial.print(analogRead(A8));
-  // Serial.print("  A9: ");
-  // Serial.print(analogRead(A9));
-  // Serial.print("  A10: ");
-  // Serial.print(analogRead(A10));
-  // Serial.print("  A11: ");
-  // Serial.println(analogRead(A11));
-
+float get_right_joystick_x_control_value() {
+  analogControl = analogRead(right_joystick_x_axis);
   return analogControl;
 }
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Read the joystick y position (forward/backward) and return 1023 (full forward) to 0 (Full reverse)
-float get_joystick_y_control_value() {             // Forward speed
-  float y_joystick = analogRead(joystick_y_axis);  // 0-1023
+float get_right_joystick_y_control_value() {             // Forward speed
+  float y_joystick = analogRead(right_joystick_y_axis);  // 0-1023
   return y_joystick;
 }
+
+// Read the joystick X position (lateral) and return 0 (full left) to 1023 (Full Right)
+float get_left_joystick_x_control_value() {
+  analogControl = analogRead(left_joystick_x_axis);
+  return analogControl;
+}
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// Read the joystick y position (forward/backward) and return 1023 (full forward) to 0 (Full reverse)
+float get_left_joystick_y_control_value() {             // Forward speed
+  float y_joystick = analogRead(left_joystick_y_axis);  // 0-1023
+  return y_joystick;
+}
+
+//---------------------------------------------------------------------------
 
 //float get_joystick_y_control_value() {    // Forward speed
 //  analogControl  = analogRead(A7);        // 0-1023
@@ -773,17 +778,14 @@ float calculate_motor_speed_value(int y_control_value) {
 
     // Reverse movement >> input range 0 to 510 >> output range 254 to 0
   } else if (y_control_value < (joystick_y_middle_value - joystick_deadzone)) {
-    local_motor_speed = 0 - map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // ERROR???
-    // local_motor_speed = map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // ERROR???
-    // FL_motor_speed = map(y_control_value, 0, joystick_y_middle_value, 254, 0);  // Updated
-    //    Serial.print (" Reverse> ");
+    local_motor_speed = 0 - map(y_control_value, 0, joystick_y_middle_value, 254, 0);
 
   } else if ((y_control_value > (joystick_y_middle_value - joystick_deadzone)) && (y_control_value < (joystick_y_middle_value + joystick_deadzone))) {
     local_motor_speed = 0;
     //    Serial.print (" Deadzone> ");
   }
 
-  if (debugflag && false) {
+  if (debugflag && true) {
     Serial.print("calculate_motor_speed_value - Y Axis:   Analog In: ");
     Serial.print(y_control_value);
     Serial.print("  Mapped:");
@@ -824,27 +826,22 @@ void set_wheel_speed(int ww_wheel_rotation_motor_direction_A_pin, int ww_wheel_r
     When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right.
     When the joystick to centered (510), the wheels will turn to center.
 */
-float convert_joystick_to_heading_value(int joystick_x_value) {
+float convert_right_joystick_to_heading_value(int right_joystick_x_value) {
 
   float heading_value = 0;
 
   // When the joystick to angled left (510 to 1023), the wheels will turn to left 0 to -90
-  if (joystick_x_value > (joystick_x_middle_value + joystick_deadzone)) {
-    // if (joystick_x_value > 515) {
-    // set_steering_motor_direction("ccw");  ////  ERROR - THESE DON'T BELONG HERE, WE ARE NOT MOVING THE MOTOR
-    heading_value = map(joystick_x_value, joystick_x_middle_value, 1023, 0, 90);
+  if (right_joystick_x_value > (joystick_x_middle_value + joystick_deadzone)) {
+    heading_value = map(right_joystick_x_value, joystick_x_middle_value, 1023, 0, 90);
     //    Serial.print(" CCW > ");
 
     // When the joystick to angled right (510 to 0), the wheels will turn to 0 to 90 right
-    // } else if (joystick_x_value < 505) {
-  } else if (joystick_x_value < (joystick_x_middle_value - joystick_deadzone)) {
-    // set_steering_motor_direction("cw");  ////  ERROR - THESE DON'T BELONG HERE, WE ARE NOT MOVING THE MOTOR
-    heading_value = map(joystick_x_value, joystick_x_middle_value, 0, 0, -90);
+  } else if (right_joystick_x_value < (joystick_x_middle_value - joystick_deadzone)) {
+    heading_value = map(right_joystick_x_value, joystick_x_middle_value, 0, 0, -90);
     //    Serial.print(" CW > ");
 
     // When the joystick to centered (510), the wheels will turn to center
-  } else if ((joystick_x_value > (joystick_x_middle_value - joystick_deadzone)) && (joystick_x_value < (joystick_x_middle_value + joystick_deadzone))) {
-    // } else if ((joystick_x_value > 505) && (joystick_x_value < 515)) {
+  } else if ((right_joystick_x_value > (joystick_x_middle_value - joystick_deadzone)) && (right_joystick_x_value < (joystick_x_middle_value + joystick_deadzone))) {
     heading_value = 0;
     //    Serial.print(" Deadzone > ");
   }
@@ -938,12 +935,12 @@ void set_wheel_heading(int ww_steering_motor_direction_A_pin, int ww_steering_mo
 
 // Read joystick switch value,    Released = 0 and pressed = 1
 bool RightJoystickButtonPressed() {
-  int pinInputValue = !digitalRead(right_joystickSwitch_pin);
+  int pinInputValue = !digitalRead(right_joystick_switch);
   return pinInputValue;
 }
 // Read joystick switch value,    Released = 0 and pressed = 1
 bool LeftJoystickButtonPressed() {
-  int pinInputValue = !digitalRead(left_joystickSwitch_pin);
+  int pinInputValue = !digitalRead(left_joystick_switch);
   return pinInputValue;
 }
 
@@ -1137,7 +1134,7 @@ float readCurrentHeading(int sensor_name_A, int sensor_name_B) {
 }
 //------------------------------------------------------------------------
 
-bool home_wheels_when_joystick_pressed() {
+bool home_wheels_when_right_joystick_pressed() {
   homeWheel = true;
   stopWheelSteeringMotor();
   driveMotorToHome();
