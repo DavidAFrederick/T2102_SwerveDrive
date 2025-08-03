@@ -352,7 +352,7 @@ void loop() {
   // if (debugflag && false) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
   //                                                      BL_current_heading, BR_current_heading);
 
-  if (debugflag && false) {
+  if (debugflag && true) {
     Serial.print("Headings:  blue FL: ");
     Serial.print(FL_current_heading);
     Serial.print(" black FR: ");
