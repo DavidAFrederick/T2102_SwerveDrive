@@ -11,10 +11,6 @@ Disabled to resolve this issue
 #define OLED_ADDR 0x3C  // Replace with your OLED's I2C address
 Adafruit_SSD1306 display(OLED_ADDR);
 
-// #include "RotaryEncoder.h"
-
-// Heading measuring code Derived from Example code "pitchrollheading" found in V2 IDE
-
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_LSM303_U.h>
@@ -81,7 +77,10 @@ long nextTime = 0;
 
 bool debugflag = false;
 bool homeWheel = false;
-bool rotate_configuration = false;
+bool normal_drive_mode = false;
+bool rotate_drive_mode = false;
+bool demonstration_mode = false;
+
 
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -281,56 +280,51 @@ const int BR_wheel_rotation_motor_direction_A_pin = 51;  // 49;  // IN-3  Revers
 const int BR_wheel_rotation_motor_direction_B_pin = 49;  // 51;  // IN-4
 const int BR_wheel_rotation_motor_speed_PWM_pin = 5;     // EN-B
 
-// // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// // Rotary Encoder Test Code
-// int Counter1 = 0, LastCount1 = 0;  // Not needed just for test
-// void RotaryChanged();              // we need to declare the func above so Rotary goes to the one below
-// // RotaryEncoder Rotary1(&RotaryChanged, 2, 3, 4);  // + Pins  (DT),  (CLK),  (SW)
-// RotaryEncoder Rotary1(&RotaryChanged, rotary_encoder_data_pin, rotary_encoder_clock_pin,
-//                       rotary_encoder_switch_pin);  // + Pins  (DT),  (CLK),  (SW)
 
-// volatile int encoderPos = 0;  // Encoder position (volatile for interrupt)
-// int lastEncoded = 0;          // Used to track last encoder state
-// // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// - - - Setup magnetic hearing sensor
+sensors_event_t mag_event;  //+ Move to setup?
+sensors_vec_t orientation;
 
 //=============================================================================
 
 void setup() {
   Serial.begin(9600);
-  initSensors();
+  initSensors();  // Magnetic heading sensor
   initializeDisplay();
   configure_pins();
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // - - - Rotary Encoder Test Code --
-  // Rotary1.setup();
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  check_for_demonstration_mode_at_startup();
 }
 //=============================================================================
 
 void loop() {
 
-  sensors_event_t mag_event;
-  sensors_vec_t orientation;
+  // sensors_event_t mag_event;  //+ Moved to before setup
+  // sensors_vec_t orientation;
 
-  /* Calculate the heading using the magnetometer */
-  mag.getEvent(&mag_event);
-  if (dof.magGetOrientation(SENSOR_AXIS_Z, &mag_event, &orientation)) {
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  //+ Moved to function?
 
-    if (first_pass) {
-      initial_heading_value = orientation.heading;
-      first_pass = false;
-    }
+  // /* Calculate the heading using the magnetometer */
+  // //
+  // get_initial_robot_heading_from_magnetic_sensor();
+  // mag.getEvent(&mag_event);
+  // if (dof.magGetOrientation(SENSOR_AXIS_Z, &mag_event, &orientation)) {
 
-    if (debugflag && true) {
-      // Serial.print(F("Heading: "));
-      // Serial.println(orientation.heading);
-      heading_for_display = orientation.heading - initial_heading_value;
-      display_text_on_OLED(heading_for_display);
-    }
-  }
+  //   if (first_pass) {
+  //     initial_heading_value = orientation.heading;
+  //     first_pass = false;
+  //   }
 
+  //   if (debugflag && false) {
+  //     // Serial.print(F("Heading: "));
+  //     // Serial.println(orientation.heading);
+  //     heading_for_display = orientation.heading - initial_heading_value;
+  //     display_text_on_OLED(heading_for_display);
+  //   }
+  // }
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+  get_initial_robot_heading_from_magnetic_sensor();
   debugflag = enable_periodic_printing_for_debug(1000);
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -344,24 +338,24 @@ void loop() {
 
   // Wheel Heading sensor
   FL_current_heading = readCurrentHeading(FL_HeadingSensor_A, FL_HeadingSensor_B);  // Update to pass parameters
-  FR_current_heading = readCurrentHeading(FR_HeadingSensor_A, FR_HeadingSensor_B);  // Update to pass parameters
-  BL_current_heading = readCurrentHeading(BL_HeadingSensor_A, BL_HeadingSensor_B);  // Update to pass parameters
-  BR_current_heading = readCurrentHeading(BR_HeadingSensor_A, BR_HeadingSensor_B);  // Update to pass parameters
+  FR_current_heading = readCurrentHeading(FR_HeadingSensor_A, FR_HeadingSensor_B);
+  BL_current_heading = readCurrentHeading(BL_HeadingSensor_A, BL_HeadingSensor_B);
+  BR_current_heading = readCurrentHeading(BR_HeadingSensor_A, BR_HeadingSensor_B);
 
   ////   OLED library is interferring with Analog inputs
   // if (debugflag && false) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
   //                                                      BL_current_heading, BR_current_heading);
 
-  if (debugflag && true) {
-    Serial.print("Headings:  blue FL: ");
-    Serial.print(FL_current_heading);
-    Serial.print(" black FR: ");
-    Serial.print(FR_current_heading);
-    Serial.print(" white BL: ");
-    Serial.print(BL_current_heading);
-    Serial.print(" silver BR: ");
-    Serial.println(BR_current_heading);
-  }
+  // if (debugflag && false) {
+  //   Serial.print("Headings:  blue FL: ");
+  //   Serial.print(FL_current_heading);
+  //   Serial.print(" black FR: ");
+  //   Serial.print(FR_current_heading);
+  //   Serial.print(" white BL: ");
+  //   Serial.print(BL_current_heading);
+  //   Serial.print(" silver BR: ");
+  //   Serial.println(BR_current_heading);
+  // }
 
   // Read joystick and use it to drive wheels
   right_y_control_value = get_right_joystick_y_control_value();  //   Returned value range:  0-1023
@@ -381,18 +375,16 @@ void loop() {
   set_wheel_speed(BR_wheel_rotation_motor_direction_A_pin, BR_wheel_rotation_motor_direction_B_pin,
                   BR_wheel_rotation_motor_speed_PWM_pin, BR_motor_speed);
 
-  // Do not steer the wheel based on joystick once the home joystick button is pressed
-  if (rotate_configuration == false) {
-    // Used for wheel steering
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  // Available Modes:  demonstration_mode, normal_drive_mode, rotate_configuration
+  // Enter demonstration mode by holding the left joystick switch down at power up
+  // Enter normal mode by not pressing any  switches at startup
+  // Enter rotate mode my pressing left joystick button once, press again to switch out.
+
+  // Use the right joystick for normal wheel steering
+  if (normal_drive_mode == true) {
     right_x_control_value = get_right_joystick_x_control_value();
     desired_wheel_heading_value = convert_right_joystick_to_heading_value(right_x_control_value);
-
-    if (debugflag && false) {
-      Serial.print("Joystick Test: X: ");
-      Serial.print(right_x_control_value);
-      Serial.print("   Desired Heading ");
-      Serial.println(desired_wheel_heading_value);
-    }
 
     set_wheel_heading(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
                       FL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, FL_current_heading);
@@ -402,23 +394,25 @@ void loop() {
                       BL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, BL_current_heading);
     set_wheel_heading(BR_steering_motor_direction_A_pin, BR_steering_motor_direction_B_pin,
                       BR_steering_motor_speed_PWM_pin, desired_wheel_heading_value, BR_current_heading);
-  } else {
-  
-    //  Code for controlling the robot while in rotate only mode
+
+    // if (debugflag && false) {
+    //   Serial.print("Joystick Test: X: ");
+    //   Serial.print(right_x_control_value);
+    //   Serial.print("   Desired Heading ");
+    //   Serial.println(desired_wheel_heading_value);
+    // }
+  }
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  //  Code for controlling the robot while in rotate only mode
+  if (rotate_drive_mode == true) {
 
     left_x_control_value = get_left_joystick_x_control_value();  //   Returned value range:  0-1023
     wheel_rotate_speed = calculate_motor_speed_value(left_x_control_value);
-
-    if (debugflag && true) {
-      Serial.print("rotate_configuration    speed: ");
-      Serial.println(wheel_rotate_speed);
-    }
 
     float FL_rotate_heading = 45;
     float FR_rotate_heading = -45;
     float BL_rotate_heading = -45;
     float BR_rotate_heading = 45;
-
 
     set_wheel_heading(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
                       FL_steering_motor_speed_PWM_pin, FL_rotate_heading, FL_current_heading);
@@ -429,7 +423,6 @@ void loop() {
     set_wheel_heading(BR_steering_motor_direction_A_pin, BR_steering_motor_direction_B_pin,
                       BR_steering_motor_speed_PWM_pin, BR_rotate_heading, BR_current_heading);
 
-
     set_wheel_speed(FL_wheel_rotation_motor_direction_A_pin, FL_wheel_rotation_motor_direction_B_pin,
                     FL_wheel_rotation_motor_speed_PWM_pin, wheel_rotate_speed);
     set_wheel_speed(FR_wheel_rotation_motor_direction_A_pin, FR_wheel_rotation_motor_direction_B_pin,
@@ -438,6 +431,17 @@ void loop() {
                     BL_wheel_rotation_motor_speed_PWM_pin, wheel_rotate_speed);
     set_wheel_speed(BR_wheel_rotation_motor_direction_A_pin, BR_wheel_rotation_motor_direction_B_pin,
                     BR_wheel_rotation_motor_speed_PWM_pin, -wheel_rotate_speed);
+
+    // if (debugflag && true) {
+    //   Serial.print("rotate_configuration    speed: ");
+    //   Serial.println(wheel_rotate_speed);
+    // }
+  }
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+  if (demonstration_mode == true) {
+
+    
   }
 
   // // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -450,29 +454,19 @@ void loop() {
   // }
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - -
-  // Rotary Encoder Test Code
-
   if (LeftJoystickButtonPressed()) {
-    Serial.println("Left Joystick Button 1 down");
-
-    if (rotate_configuration == false) {
-      rotate_configuration = true;
+    Serial.println("Left Joystick Button 1 down - v v v v v v v v v v v ");
+    if (rotate_drive_mode == false) {
+      rotate_drive_mode = true;
+      normal_drive_mode = false;
       Serial.println("Rotate Configuration On ++++");
     } else {
-      rotate_configuration = false;
+      rotate_drive_mode = false;
+      normal_drive_mode = true;
       Serial.println("Rotate Configuration Off -------");
       wheel_rotate_speed = 0;
     }
   }
-  //
-  // if (LastCount1 != Counter1) {
-  //   Serial.print("Counter1:  ");
-  //   Serial.println(Counter1);
-  //   LastCount1 = Counter1;
-  // }
-
-  // - - - - - - - - - - - - - - - - - - - - - - - - - - -
 }  // End of Main loop
 //====(End of Main loop)====================================================================
 
@@ -1233,10 +1227,40 @@ void display_text_on_OLED(String text_to_display) {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 //------------------------------------------------------------------------
+void check_for_demonstration_mode_at_startup() {
+
+  if (LeftJoystickButtonPressed()) {
+    demonstration_mode = true;
+    normal_drive_mode = false;
+    display_text_on_OLED("Demonstration Mode");
+  } else {
+    normal_drive_mode = true;
+    demonstration_mode = false;
+    display_text_on_OLED("Normal Mode");
+  }
+  delay(1000);
+}
 
 
 //------------------------------------------------------------------------
 
+void get_initial_robot_heading_from_magnetic_sensor() {
+  mag.getEvent(&mag_event);
+  if (dof.magGetOrientation(SENSOR_AXIS_Z, &mag_event, &orientation)) {
+
+    if (first_pass) {
+      initial_heading_value = orientation.heading;
+      first_pass = false;
+    }
+
+    if (debugflag && false) {
+      // Serial.print(F("Heading: "));
+      // Serial.println(orientation.heading);
+      heading_for_display = orientation.heading - initial_heading_value;
+      display_text_on_OLED(heading_for_display);
+    }
+  }
+}
 
 
 //------------------------------------------------------------------------
