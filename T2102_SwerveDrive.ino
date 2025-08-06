@@ -84,7 +84,7 @@ int demonstration_phase = 0;
 long demonstration_start_time = millis();
 int demonstration_phase_duration_seconds = 3;
 int start_time_of_next_demonstration_phase = 0;
-int number_of_demo_phases = 5;
+int number_of_demo_phases = 3;
 
 
 
@@ -351,16 +351,16 @@ void loop() {
   // if (debugflag && false) displaySensorValuesAndHeading(FL_current_heading, FR_current_heading,
   //                                                      BL_current_heading, BR_current_heading);
 
-  // if (debugflag && false) {
-  //   Serial.print("Headings:  blue FL: ");
-  //   Serial.print(FL_current_heading);
-  //   Serial.print(" black FR: ");
-  //   Serial.print(FR_current_heading);
-  //   Serial.print(" white BL: ");
-  //   Serial.print(BL_current_heading);
-  //   Serial.print(" silver BR: ");
-  //   Serial.println(BR_current_heading);
-  // }
+  if (debugflag && false) {
+    Serial.print("Headings:  blue FL: ");
+    Serial.print(FL_current_heading);
+    Serial.print(" black FR: ");
+    Serial.print(FR_current_heading);
+    Serial.print(" white BL: ");
+    Serial.print(BL_current_heading);
+    Serial.print(" silver BR: ");
+    Serial.println(BR_current_heading);
+  }
 
   // Read joystick and use it to drive wheels
   right_y_control_value = get_right_joystick_y_control_value();  //   Returned value range:  0-1023
@@ -445,9 +445,8 @@ void loop() {
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   if (demonstration_mode == true) {
-    Serial.println("Demonstration Mode ");
 
-    demonstration_phase = 2;  // temp to test
+    // demonstration_phase = 2;  // temp to test
 
     if (demonstration_phase == 1) {
       if (debugflag && true) Serial.println("Demonstration Phase 1 ");
@@ -496,7 +495,7 @@ void loop() {
     // Serial.print("    Next Phase: ");
     // Serial.println(start_time_of_next_demonstration_phase);
 
-    if (false) {
+    if (true) {
       if (millis() > start_time_of_next_demonstration_phase) {
         demonstration_phase = demonstration_phase + 1;
         if (demonstration_phase >= number_of_demo_phases) {
@@ -927,8 +926,8 @@ void set_wheel_heading(int ww_steering_motor_direction_A_pin, int ww_steering_mo
   // ... IF hd is negative, set motor to turn wheel heading ccw
 
   int option = 0;
-  float heading_alignment_tolerance = 15;
-  float heading_change_speed = 150;  //
+  float heading_alignment_tolerance = 20;   // Was 15
+  float heading_change_speed = 160;  //   was 150
 
 
 
@@ -967,7 +966,8 @@ void set_wheel_heading(int ww_steering_motor_direction_A_pin, int ww_steering_mo
 
   // PWM Pin Silver = 45, White = 13, Black = 44, Blue = 6
 
-  if (debugflag && false && (ww_steering_motor_speed_PWM_pin == 45)) {  // Blue = 6
+  // if (debugflag && true && (ww_steering_motor_speed_PWM_pin == 45)) {  // Blue = 6
+  if (debugflag && false ) {  // Blue = 6
     Serial.print("Wheel: ");
     Serial.print(ww_steering_motor_speed_PWM_pin);
     Serial.print("  Current: ");
