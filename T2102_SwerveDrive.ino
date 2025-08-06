@@ -80,6 +80,11 @@ bool homeWheel = false;
 bool normal_drive_mode = false;
 bool rotate_drive_mode = false;
 bool demonstration_mode = false;
+int demonstration_phase = 0;
+long demonstration_start_time = millis();
+int demonstration_phase_duration_seconds = 3;
+int start_time_of_next_demonstration_phase = 0;
+int number_of_demo_phases = 5;
 
 
 
@@ -441,7 +446,65 @@ void loop() {
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   if (demonstration_mode == true) {
 
-    
+    if (debugflag && true) {
+      Serial.print("Demonstration Phase: ");
+      Serial.println(demonstration_phase);
+    }
+
+    if (demonstration_phase == 1) {
+      if (debugflag && true) Serial.println("Demonstration Phase 1 ");
+      rotate_all_wheels_heading(100);
+      delay(2000);
+      rotate_all_wheels_heading(0);
+      delay(500);
+      rotate_all_wheels_heading(-100);
+      delay(2000);
+      rotate_all_wheels_heading(0);
+      delay(500);
+      set_wheel_headings(0);
+      Serial.println("End - Demonstration Phase 1 - Aligning wheels");
+      delay(1000);
+    }
+
+    if (demonstration_phase == 2) {
+      if (debugflag && true) Serial.println("Demonstration Phase 2 ");
+
+      spin_all_wheels_at_speed(100);
+      delay(2000);
+      spin_all_wheels_at_speed(0);
+      delay(200);
+      spin_all_wheels_at_speed(-100);
+      delay(2000);
+      spin_all_wheels_at_speed(0);
+      delay(500);
+      set_wheel_headings(0);
+      Serial.println("End - Demonstration Phase 2 - Aligning wheels");
+      delay(1000);
+    }
+
+    if (demonstration_phase == 3) {
+      if (debugflag && true) Serial.println("Demonstration Phase 3 ");
+    }
+
+    if (demonstration_phase == 4) {
+      if (debugflag && true) Serial.println("Demonstration Phase 4");
+    }
+    start_time_of_next_demonstration_phase =
+      demonstration_start_time + (demonstration_phase_duration_seconds * 1000) + (demonstration_phase * 1000);
+
+    // Serial.print("Current Time: ");
+    // Serial.print(millis());
+    // Serial.print("    Next Phase: ");
+    // Serial.println(start_time_of_next_demonstration_phase);
+
+
+    if (millis() > start_time_of_next_demonstration_phase) {
+      demonstration_phase = demonstration_phase + 1;
+      if (demonstration_phase >= number_of_demo_phases) {
+        demonstration_phase = 1;
+        demonstration_start_time = millis();
+      }
+    }
   }
 
   // // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1264,14 +1327,70 @@ void get_initial_robot_heading_from_magnetic_sensor() {
 
 
 //------------------------------------------------------------------------
+void rotate_all_wheels_heading(int all_wheel_rotation_speed) {
 
+  runWheelSteeringMotor(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
+                        FL_steering_motor_speed_PWM_pin, all_wheel_rotation_speed);
+  runWheelSteeringMotor(FR_steering_motor_direction_A_pin, FR_steering_motor_direction_B_pin,
+                        FR_steering_motor_speed_PWM_pin, all_wheel_rotation_speed);
+  runWheelSteeringMotor(BL_steering_motor_direction_A_pin, BL_steering_motor_direction_B_pin,
+                        BL_steering_motor_speed_PWM_pin, all_wheel_rotation_speed);
+  runWheelSteeringMotor(BR_steering_motor_direction_A_pin, BR_steering_motor_direction_B_pin,
+                        BR_steering_motor_speed_PWM_pin, all_wheel_rotation_speed);
+}
+
+
+//------------------------------------------------------------------------
+void set_wheel_headings(int all_wheel_heading) {
+  set_wheel_heading(FL_steering_motor_direction_A_pin, FL_steering_motor_direction_B_pin,
+                    FL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, all_wheel_heading);
+  set_wheel_heading(FR_steering_motor_direction_A_pin, FR_steering_motor_direction_B_pin,
+                    FR_steering_motor_speed_PWM_pin, desired_wheel_heading_value, all_wheel_heading);
+  set_wheel_heading(BL_steering_motor_direction_A_pin, BL_steering_motor_direction_B_pin,
+                    BL_steering_motor_speed_PWM_pin, desired_wheel_heading_value, all_wheel_heading);
+  set_wheel_heading(BR_steering_motor_direction_A_pin, BR_steering_motor_direction_B_pin,
+                    BR_steering_motor_speed_PWM_pin, desired_wheel_heading_value, all_wheel_heading);
+}
+
+//------------------------------------------------------------------------
+void spin_all_wheels_at_speed(int all_wheels_speed) {
+
+  set_wheel_speed(FL_wheel_rotation_motor_direction_A_pin, FL_wheel_rotation_motor_direction_B_pin,
+                  FL_wheel_rotation_motor_speed_PWM_pin, all_wheels_speed);
+  set_wheel_speed(FR_wheel_rotation_motor_direction_A_pin, FR_wheel_rotation_motor_direction_B_pin,
+                  FR_wheel_rotation_motor_speed_PWM_pin, all_wheels_speed);
+  set_wheel_speed(BL_wheel_rotation_motor_direction_A_pin, BL_wheel_rotation_motor_direction_B_pin,
+                  BL_wheel_rotation_motor_speed_PWM_pin, all_wheels_speed);
+  set_wheel_speed(BR_wheel_rotation_motor_direction_A_pin, BR_wheel_rotation_motor_direction_B_pin,
+                  BR_wheel_rotation_motor_speed_PWM_pin, all_wheels_speed);
+}
+//------------------------------------------------------------------------
 
 
 //------------------------------------------------------------------------
 
 
+//------------------------------------------------------------------------
+
 
 //------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------
+
+
 //------------------------------------------------------------------------
 
 // No printing:  About 1700 loops per second
