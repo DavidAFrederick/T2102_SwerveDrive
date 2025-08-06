@@ -445,41 +445,40 @@ void loop() {
 
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   if (demonstration_mode == true) {
+    Serial.println("Demonstration Mode ");
 
-    if (debugflag && true) {
-      Serial.print("Demonstration Phase: ");
-      Serial.println(demonstration_phase);
-    }
+    demonstration_phase = 2;  // temp to test
 
     if (demonstration_phase == 1) {
       if (debugflag && true) Serial.println("Demonstration Phase 1 ");
-      rotate_all_wheels_heading(100);
+      int demo_speed = 70;
+      rotate_all_wheels_heading(demo_speed);
       delay(2000);
       rotate_all_wheels_heading(0);
       delay(500);
-      rotate_all_wheels_heading(-100);
+      rotate_all_wheels_heading(-demo_speed);
       delay(2000);
       rotate_all_wheels_heading(0);
       delay(500);
       set_wheel_headings(0);
       Serial.println("End - Demonstration Phase 1 - Aligning wheels");
-      delay(1000);
+      delay(2000);
     }
 
     if (demonstration_phase == 2) {
       if (debugflag && true) Serial.println("Demonstration Phase 2 ");
-
-      spin_all_wheels_at_speed(100);
-      delay(2000);
+      int demo_speed = 70;
+      spin_all_wheels_at_speed(demo_speed);
+      delay(1000);
       spin_all_wheels_at_speed(0);
       delay(200);
-      spin_all_wheels_at_speed(-100);
-      delay(2000);
+      spin_all_wheels_at_speed(-demo_speed);
+      delay(1000);
       spin_all_wheels_at_speed(0);
       delay(500);
       set_wheel_headings(0);
       Serial.println("End - Demonstration Phase 2 - Aligning wheels");
-      delay(1000);
+      delay(2000);
     }
 
     if (demonstration_phase == 3) {
@@ -497,14 +496,17 @@ void loop() {
     // Serial.print("    Next Phase: ");
     // Serial.println(start_time_of_next_demonstration_phase);
 
-
-    if (millis() > start_time_of_next_demonstration_phase) {
-      demonstration_phase = demonstration_phase + 1;
-      if (demonstration_phase >= number_of_demo_phases) {
-        demonstration_phase = 1;
-        demonstration_start_time = millis();
+    if (false) {
+      if (millis() > start_time_of_next_demonstration_phase) {
+        demonstration_phase = demonstration_phase + 1;
+        if (demonstration_phase >= number_of_demo_phases) {
+          demonstration_phase = 1;
+          demonstration_start_time = millis();
+        }
       }
     }
+
+
   }
 
   // // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -842,7 +844,7 @@ float calculate_motor_speed_value(int y_control_value) {
     //    Serial.print (" Deadzone> ");
   }
 
-  if (debugflag && true) {
+  if (debugflag && false) {
     Serial.print("calculate_motor_speed_value - Y Axis:   Analog In: ");
     Serial.print(y_control_value);
     Serial.print("  Mapped:");
